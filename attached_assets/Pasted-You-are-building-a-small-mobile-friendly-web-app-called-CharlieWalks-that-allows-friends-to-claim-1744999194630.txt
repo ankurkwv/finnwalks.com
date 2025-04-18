@@ -1,0 +1,109 @@
+You are building a small, mobile-friendly web app called "CharlieWalks" that allows friends to claim dog-walking slots for our Aussie Doodle.
+
+🎯 CORE GOAL
+Let anyone with the link visit the site, view a simple always-up-to-date schedule of the next 7 days, and quickly claim or cancel 30-minute dog-walking slots. No login required. Sam & Ankur must receive SMS notifications via Twilio every time the schedule changes.
+
+💻 TECH STACK & HOSTING
+Backend: Node.js + Express
+
+Frontend: Vanilla HTML/CSS/JS (no frameworks)
+
+Database: Use Replit Key-Value Store via @replit/database client (ESM import)
+
+Notifications: Twilio SMS via env vars (TWILIO_SID, TWILIO_TOKEN, TWILIO_FROM, ALERT_TO)
+
+Host entirely within the same Replit workspace (no external services besides Twilio)
+
+📅 SCHEDULE & DATA MODEL
+Store slots in Replit Key-Value Store with keys formatted as slots:{YYYY-MM-DD}:{HHMM}.
+Values are simple JSON objects:
+
+json
+Copy
+Edit
+{
+  "name": "Alex",
+  "notes": "Taking him to the park 🌳",
+  "timestamp": 1713813600000
+}
+Dates in ISO format (YYYY-MM-DD)
+
+Times in 24-hour strings ("0830", "0900", … "2130")
+
+Slots are 30-minute increments; only store when booked.
+
+🛣️ API ROUTES
+GET /api/schedule?start={YYYY-MM-DD}
+Returns schedule for 7 days starting from given date, organized by day.
+
+POST /api/slot
+Body: { date: 'YYYY-MM-DD', time: 'HHMM', name: '', notes: '' }
+Books a slot. Returns 400 if already booked.
+
+DELETE /api/slot
+Body: { date, time, name }
+Deletes a slot if requesting name matches booked name; returns 400 if mismatch.
+
+Every POST and DELETE triggers a Twilio SMS notification.
+
+📱 FRONTEND INTERFACE & UX
+Style similar to Airtable: rounded corners, soft shadows, pastel colors, Inter font.
+
+One-column vertical list, grouped by day, showing booked slots chronologically.
+
+Empty slots hidden by default; add new slots with a prominent (+) Add Slot button per day.
+
+On clicking (+) Add Slot, display available times in a dropdown, plus a free-text notes field.
+
+User identification (no login):
+
+On first visit, prompt for "First Name," store in localStorage.
+
+Subsequent visits auto-use stored name; block actions if name missing.
+
+Interaction details:
+
+Booked slots show: "04:00 PM — Alex (🗑️)" with optional notes.
+
+(🗑️) delete icon only appears for slots booked by local user.
+
+Navigation:
+
+Header pagination controls: "← Previous 7 days | Today | Next 7 days →"
+
+"Today" button resets schedule view to current date.
+
+📲 SMS NOTIFICATIONS (TWILIO)
+Set these environment variables securely via Replit Secrets:
+
+TWILIO_SID
+
+TWILIO_TOKEN
+
+TWILIO_FROM
+
+ALERT_TO (comma-separated Sam & Ankur’s numbers)
+
+SMS formats:
+
+Booking: "{name} booked {date} at {time}. Notes: {notes || '—'}"
+
+Deletion: "{name} canceled {date} at {time}."
+
+🔒 EDGE CASES & ERRORS
+Handle concurrent bookings gracefully (first booker wins; second receives JSON error: { error: "Slot taken" })
+
+Implement simple CORS policy (same-origin /api/*) and security defaults (helmet recommended)
+
+🛠️ DEVELOPMENT NOTES
+Seed Replit Key-Value Store with empty slots covering next 14 days (seed.js)
+
+Use Jest for minimal testing of slot collisions, deletion permissions, and schedule API
+
+Document basic instructions (README.md): setup, running, deploying (node index.js)
+
+Always bind Express to process.env.PORT || 3000 for Replit compatibility
+
+After successful local testing, deploy for persistent hosting by clicking "Deploy → Autoscale" in Replit
+
+When the app is run, it should immediately open the web interface, ready for friends to start scheduling walks for Charlie! 🐾
