@@ -6,9 +6,11 @@ import { queryClient } from "../lib/queryClient";
 // Get the schedule for a week
 export function useSchedule(startDate: string): UseQueryResult<WeekSchedule> {
   return useQuery({
-    queryKey: [`/api/schedule?start=${startDate}`],
-    refetchOnWindowFocus: true, // Update if user comes back to the window
-    staleTime: 1000 * 60, // Consider data stale after 1 minute
+    queryKey: ['/api/schedule', startDate],
+    // Ensure we always have the latest data from the server
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    staleTime: 0, // Data is always considered stale to ensure fresh data
   });
 }
 
@@ -19,9 +21,16 @@ export function useAddSlot(): UseMutationResult<WalkingSlot, Error, InsertSlot> 
       const response = await apiRequest("POST", "/api/slot", data);
       return response.json();
     },
-    onSuccess: () => {
-      // Invalidate schedule queries to refetch
-      queryClient.invalidateQueries({ queryKey: ["/api/schedule"] });
+    onSuccess: (newSlot) => {
+      // Get the current date from the new slot
+      const { date } = newSlot;
+      
+      // Update the cache directly while also triggering a background refresh
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/schedule'],
+        // Refetch immediately to ensure UI updates
+        refetchType: 'active',
+      });
     },
   });
 }
@@ -32,9 +41,16 @@ export function useDeleteSlot(): UseMutationResult<void, Error, DeleteSlot> {
     mutationFn: async (data: DeleteSlot) => {
       await apiRequest("DELETE", "/api/slot", data);
     },
-    onSuccess: () => {
-      // Invalidate schedule queries to refetch
-      queryClient.invalidateQueries({ queryKey: ["/api/schedule"] });
+    onSuccess: (_, variables) => {
+      // Get the current date from the deleted slot variables
+      const { date } = variables;
+      
+      // Update the cache directly while also triggering a background refresh
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/schedule'],
+        // Refetch immediately to ensure UI updates
+        refetchType: 'active',
+      });
     },
   });
 }

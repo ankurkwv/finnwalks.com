@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import finnImage from '../assets/finn.webp';
 
 interface HeaderProps {
   onPrevWeek: () => void;
@@ -20,10 +21,12 @@ const Header: React.FC<HeaderProps> = ({
     <header className="bg-white shadow-sm sticky top-0 z-10">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center">
-          <div className="w-10 h-10 rounded-full bg-finn-primary text-white flex items-center justify-center mr-3">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
-            </svg>
+          <div className="w-12 h-12 rounded-full overflow-hidden mr-3 border-2 border-finn-primary">
+            <img 
+              src={finnImage} 
+              alt="Finn the dog" 
+              className="w-full h-full object-cover"
+            />
           </div>
           <h1 className="text-2xl font-bold text-gray-800">FinnWalks</h1>
         </div>
@@ -64,7 +67,7 @@ const Header: React.FC<HeaderProps> = ({
           
           <button 
             onClick={onToday}
-            className="bg-finn-primary hover:bg-blue-600 text-white py-1 px-4 rounded text-sm"
+            className="bg-finn-primary hover:bg-blue-600 text-white py-1 px-4 rounded text-sm block"
           >
             Today
           </button>

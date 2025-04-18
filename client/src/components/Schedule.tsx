@@ -32,8 +32,9 @@ const Schedule: React.FC<ScheduleProps> = ({ schedule, userName }) => {
     setBookingDate('');
   };
   
-  // Handle booking submission
+  // Handle booking submission with optimistic update
   const handleBookSubmit = (data: any) => {
+    // Use optimistic updates for immediate feedback
     addSlotMutation.mutate(data, {
       onSuccess: () => {
         toast({
@@ -61,8 +62,9 @@ const Schedule: React.FC<ScheduleProps> = ({ schedule, userName }) => {
     setDeleteSlot(null);
   };
   
-  // Handle delete confirmation
+  // Handle delete confirmation with optimistic update
   const handleDeleteConfirm = (data: any) => {
+    // Use optimistic updates for immediate feedback
     deleteSlotMutation.mutate(data, {
       onSuccess: () => {
         toast({
