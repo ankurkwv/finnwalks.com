@@ -7,6 +7,13 @@ import { queryClient } from "../lib/queryClient";
 export function useSchedule(startDate: string): UseQueryResult<WeekSchedule> {
   return useQuery({
     queryKey: ['/api/schedule', startDate],
+    queryFn: async () => {
+      const res = await fetch(`/api/schedule?start=${startDate}`);
+      if (!res.ok) {
+        throw new Error('Failed to fetch schedule');
+      }
+      return res.json();
+    },
     // Ensure we always have the latest data from the server
     refetchOnWindowFocus: true,
     refetchOnMount: true,

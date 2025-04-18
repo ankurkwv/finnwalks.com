@@ -24,13 +24,8 @@ const Home: React.FC = () => {
   // Format the date to ISO string for API
   const startDateStr = currentStartDate.toISOString().split('T')[0];
   
-  // Fetch schedule data with auto-refresh
-  const { data: schedule, isLoading, error, refetch } = useSchedule(startDateStr);
-  
-  // Refetch whenever the start date changes
-  useEffect(() => {
-    refetch();
-  }, [startDateStr, refetch]);
+  // Fetch schedule data with auto-refresh and unique query key per date
+  const { data: schedule, isLoading, error } = useSchedule(startDateStr);
   
   // Check for user name on mount
   useEffect(() => {

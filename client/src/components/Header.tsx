@@ -67,7 +67,7 @@ const Header: React.FC<HeaderProps> = ({
           
           <button 
             onClick={onToday}
-            className="bg-finn-primary hover:bg-blue-600 text-white py-1 px-4 rounded text-sm block visible"
+            className="border border-finn-primary bg-white hover:bg-blue-50 text-finn-primary font-medium py-1 px-4 rounded text-sm block"
             aria-label="Jump to today's date"
           >
             Today
