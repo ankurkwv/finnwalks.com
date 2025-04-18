@@ -12,9 +12,9 @@ const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose }) => {
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Charlie's Care Instructions</DialogTitle>
+          <DialogTitle>Finn's Care Instructions</DialogTitle>
           <DialogDescription>
-            Important information for walking Charlie
+            Important information for walking Finn
           </DialogDescription>
         </DialogHeader>
         
@@ -22,7 +22,7 @@ const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose }) => {
           <div>
             <h4 className="font-medium text-gray-800 mb-1">Walking</h4>
             <p className="text-gray-600">
-              Charlie needs a 30-minute walk twice a day. He pulls a bit at first but settles down after 5 minutes. 
+              Finn needs a 30-minute walk twice a day. He pulls a bit at first but settles down after 5 minutes. 
               Always keep him on leash in unfenced areas.
             </p>
           </div>
