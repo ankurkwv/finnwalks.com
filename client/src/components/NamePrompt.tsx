@@ -28,7 +28,7 @@ const NamePrompt: React.FC<NamePromptProps> = ({ isOpen, onSave }) => {
     <Dialog open={isOpen}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Welcome to CharlieWalks!</DialogTitle>
+          <DialogTitle>Welcome to FinnWalks!</DialogTitle>
           <DialogDescription>
             Please enter your first name so we can identify your bookings.
           </DialogDescription>

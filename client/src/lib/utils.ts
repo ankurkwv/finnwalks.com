@@ -15,26 +15,10 @@ export function formatTime(timeStr: string): string {
   return `${hour12}:${minute} ${period}`;
 }
 
-// Format time range (start time to end time 30 minutes later)
+// Format time display for walks (just start time)
 export function formatTimeRange(timeStr: string): string {
-  const startTime = formatTime(timeStr);
-  
-  // Calculate end time (30 minutes later)
-  const hour = parseInt(timeStr.substring(0, 2));
-  const minute = parseInt(timeStr.substring(2, 4));
-  
-  let endHour = hour;
-  let endMinute = minute + 30;
-  
-  if (endMinute >= 60) {
-    endHour += 1;
-    endMinute -= 60;
-  }
-  
-  const endTimeStr = `${endHour.toString().padStart(2, '0')}${endMinute.toString().padStart(2, '0')}`;
-  const endTime = formatTime(endTimeStr);
-  
-  return `${startTime} - ${endTime}`;
+  // Just show the start time without a range
+  return formatTime(timeStr);
 }
 
 // Format date

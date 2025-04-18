@@ -102,7 +102,7 @@ const Schedule: React.FC<ScheduleProps> = ({ schedule, userName }) => {
                   className="rounded-full"
                 >
                   <PlusIcon className="h-4 w-4 mr-1" />
-                  Add Slot
+                  Add Walk
                 </Button>
               </div>
               
