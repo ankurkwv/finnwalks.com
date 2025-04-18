@@ -10,13 +10,13 @@ document.head.appendChild(interFontLink);
 
 // Add page title and favicon
 const title = document.createElement("title");
-title.textContent = "CharlieWalks | Schedule Dog Walks";
+title.textContent = "FinnWalks | Schedule Dog Walks";
 document.head.appendChild(title);
 
 // Add meta description
 const metaDesc = document.createElement("meta");
 metaDesc.name = "description";
-metaDesc.content = "Schedule 30-minute dog-walking slots for Charlie the Aussie Doodle";
+metaDesc.content = "Schedule 30-minute dog-walking slots for Finn the Aussie Doodle";
 document.head.appendChild(metaDesc);
 
 createRoot(document.getElementById("root")!).render(<App />);
