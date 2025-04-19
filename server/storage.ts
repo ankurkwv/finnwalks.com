@@ -544,7 +544,7 @@ export class DatabaseStorage implements IStorage {
       return walkers.map(walker => ({
         name: walker.name,
         colorIndex: walker.colorIndex,
-        phone: walker.phone
+        phone: walker.phone || undefined
       }));
     } catch (error) {
       console.error('Error fetching walkers:', error);
@@ -563,7 +563,7 @@ export class DatabaseStorage implements IStorage {
       return {
         name: walker.name,
         colorIndex: walker.colorIndex,
-        phone: walker.phone
+        phone: walker.phone || undefined
       };
     } catch (error) {
       console.error('Error getting walker by name:', error);
@@ -583,7 +583,7 @@ export class DatabaseStorage implements IStorage {
       return walkers.map(walker => ({
         name: walker.name,
         colorIndex: walker.colorIndex,
-        phone: walker.phone
+        phone: walker.phone || undefined
       }));
     } catch (error) {
       console.error('Error searching walkers:', error);
