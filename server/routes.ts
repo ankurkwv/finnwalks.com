@@ -130,6 +130,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to fetch walker" });
     }
   });
+  
+  // Update walker information (create if not exists)
+  app.post("/api/walkers/:name", async (req: Request, res: Response) => {
+    try {
+      const { name } = req.params;
+      const { phone } = req.body;
+      
+      if (!name) {
+        return res.status(400).json({ error: "Name parameter is required" });
+      }
+      
+      if (!phone || typeof phone !== 'string') {
+        return res.status(400).json({ error: "Valid phone number is required" });
+      }
+      
+      const walker = await storage.updateWalker(name, phone);
+      res.json(walker);
+    } catch (error) {
+      console.error("Walker update error:", error);
+      res.status(500).json({ error: "Failed to update walker" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

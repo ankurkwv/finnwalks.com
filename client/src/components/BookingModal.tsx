@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -7,8 +7,70 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { formatDate, getAvailableTimes } from '../lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { InsertSlot } from '@shared/schema';
+import { InsertSlot, Walker } from '@shared/schema';
 import PhoneInput from 'react-phone-number-input/input';
+import { useSearchWalkers } from '../hooks/useWalkers';
+import { apiRequest } from '../lib/queryClient';
+
+// Walker Autocomplete component
+interface WalkerAutocompleteProps {
+  searchTerm: string;
+  onSelect: (walker: Walker) => void;
+}
+
+const WalkerAutocomplete: React.FC<WalkerAutocompleteProps> = ({ searchTerm, onSelect }) => {
+  const { data: walkers = [], isLoading } = useSearchWalkers(searchTerm);
+  const [isVisible, setIsVisible] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  
+  // Hide dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        setIsVisible(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+  
+  // Show dropdown when typing and there are matches
+  useEffect(() => {
+    if (searchTerm && walkers.length > 0) {
+      setIsVisible(true);
+    } else {
+      setIsVisible(false);
+    }
+  }, [searchTerm, walkers]);
+  
+  if (!isVisible || !walkers.length) {
+    return null;
+  }
+  
+  return (
+    <div 
+      ref={wrapperRef}
+      className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto"
+    >
+      {walkers.map((walker: Walker) => (
+        <div
+          key={walker.name}
+          className="px-4 py-2 cursor-pointer hover:bg-gray-100 flex justify-between"
+          onClick={() => {
+            onSelect(walker);
+            setIsVisible(false);
+          }}
+        >
+          <span>{walker.name}</span>
+          {walker.phone && <span className="text-gray-500 text-sm">{walker.phone}</span>}
+        </div>
+      ))}
+    </div>
+  );
+};
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -54,7 +116,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
     }
   }, [isOpen, userName, userPhone]);
   
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!selectedTime) {
       toast({
         title: "Error",
@@ -93,6 +155,23 @@ const BookingModal: React.FC<BookingModalProps> = ({
       return;
     }
     
+    // If phone number is provided, update the walker database
+    if (phone && phone.startsWith('+')) {
+      try {
+        // Update walker in database for future autocomplete
+        await fetch(`/api/walkers/${encodeURIComponent(name.trim())}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ phone }),
+        });
+      } catch (error) {
+        console.error('Failed to update walker information:', error);
+        // Continue with booking even if walker update fails
+      }
+    }
+    
     onSubmit({
       date,
       time: selectedTime,
@@ -115,14 +194,26 @@ const BookingModal: React.FC<BookingModalProps> = ({
         <div className="space-y-4 py-4">
           <p className="text-gray-700">{formatDate(date)}</p>
           
-          <div className="space-y-2">
+          <div className="space-y-2 relative">
             <Label htmlFor="walker-name">Your Name</Label>
             <Input
               id="walker-name"
               placeholder="Enter your name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+              }}
+              autoComplete="off"
               className="w-full"
+            />
+            <WalkerAutocomplete
+              searchTerm={name}
+              onSelect={(walker) => {
+                setName(walker.name);
+                if (walker.phone) {
+                  setPhone(walker.phone);
+                }
+              }}
             />
           </div>
           

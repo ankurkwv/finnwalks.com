@@ -611,9 +611,13 @@ export class DatabaseStorage implements IStorage {
         // Create new walker with color index and phone
         const colorIndex = await this.getWalkerColorIndex(name);
         
-        await db.update(walkerColors)
-          .set({ phone })
-          .where(eq(walkerColors.name, name));
+        // Insert new walker since it doesn't exist
+        await db.insert(walkerColors)
+          .values({ name, colorIndex, phone })
+          .onConflictDoUpdate({
+            target: walkerColors.name,
+            set: { phone }
+          });
           
         return {
           name,
