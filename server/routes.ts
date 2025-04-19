@@ -86,6 +86,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get color index for a walker's name
+  app.get("/api/walker-color/:name", async (req: Request, res: Response) => {
+    try {
+      const { name } = req.params;
+      if (!name) {
+        return res.status(400).json({ error: "Name parameter is required" });
+      }
+      
+      const colorIndex = await storage.getWalkerColorIndex(name);
+      return res.status(200).json({ colorIndex });
+    } catch (error) {
+      console.error("Error getting walker color:", error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

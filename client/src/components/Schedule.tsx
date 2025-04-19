@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { WalkingSlot } from '@shared/schema';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { formatDate, formatTimeRange, getWalkerColorIndex } from '../lib/utils';
+import { formatDate, formatTimeRange, getWalkerColorIndex, getWalkerColorIndexSync } from '../lib/utils';
 import { PlusIcon, Trash2Icon } from 'lucide-react';
 import BookingModal from './BookingModal';
 import DeleteModal from './DeleteModal';
@@ -18,11 +18,51 @@ interface ScheduleProps {
 const Schedule: React.FC<ScheduleProps> = ({ schedule, userName, onUpdateUserName }) => {
   const [bookingDate, setBookingDate] = useState<string>('');
   const [deleteSlot, setDeleteSlot] = useState<WalkingSlot | null>(null);
+  const [colorIndices, setColorIndices] = useState<Record<string, number>>({});
   const { toast } = useToast();
   
   // Mutations for adding and deleting slots
   const addSlotMutation = useAddSlot();
   const deleteSlotMutation = useDeleteSlot();
+  
+  // Load color indices for all walker names in the schedule
+  useEffect(() => {
+    // Extract all unique walker names from the schedule
+    const walkerNames = new Set<string>();
+    
+    Object.values(schedule).forEach(slots => {
+      slots.forEach(slot => {
+        if (slot.name) {
+          walkerNames.add(slot.name);
+        }
+      });
+    });
+    
+    // Fetch color indices for all walker names
+    const fetchColors = async () => {
+      const newIndices: Record<string, number> = {};
+      
+      // Convert Set to Array for iteration in older TypeScript/JS environments
+      const nameArray = Array.from(walkerNames);
+      
+      for (const name of nameArray) {
+        try {
+          // Use the async version to get the actual index from the server
+          const colorIndex = await getWalkerColorIndex(name);
+          newIndices[name] = colorIndex;
+        } catch (error) {
+          console.error(`Error fetching color for ${name}:`, error);
+        }
+      }
+      
+      setColorIndices(prevIndices => ({
+        ...prevIndices,
+        ...newIndices
+      }));
+    };
+    
+    fetchColors();
+  }, [schedule]);
   
   // Handle booking modal
   const openBookingModal = (date: string) => {
@@ -111,7 +151,10 @@ const Schedule: React.FC<ScheduleProps> = ({ schedule, userName, onUpdateUserNam
               <div className="space-y-3">
                 {slots.length > 0 ? (
                   slots.map((slot) => {
-                    const colorIndex = getWalkerColorIndex(slot.name);
+                    // Use the cached color index if available, or use the sync version as fallback
+                    const colorIndex = colorIndices[slot.name] !== undefined 
+                      ? colorIndices[slot.name] 
+                      : getWalkerColorIndexSync(slot.name);
                     
                     return (
                       <Card 

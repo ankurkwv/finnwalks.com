@@ -85,40 +85,52 @@ export function getAvailableTimes(bookedSlots: string[] = []): { value: string; 
   return times;
 }
 
-// Get color index based on walker's name
-export function getWalkerColorIndex(name: string): number {
+// Cache of walker color indices to minimize API requests
+const walkerColorCache: Record<string, number> = {};
+
+// Get color index based on walker's name using the server API
+export async function getWalkerColorIndex(name: string): Promise<number> {
   // If empty name, return default color index
   if (!name) return 0;
   
-  // Directly map specific common names to fixed indices for consistency
-  const nameMap: Record<string, number> = {
-    'Alice': 0,
-    'Bob': 1,
-    'Charlie': 2,
-    'David': 3,
-    'Emma': 4,
-    'Frank': 5,
-    'Grace': 6,
-    'Henry': 7,
-    'Ivy': 8,
-    'Jack': 9,
-    // Add more mappings if needed
-  };
+  // Check if we already have this name in our cache
+  if (walkerColorCache[name] !== undefined) {
+    return walkerColorCache[name];
+  }
+
+  try {
+    // Fetch the color index from the server
+    const response = await fetch(`/api/walker-color/${encodeURIComponent(name)}`);
+    
+    if (!response.ok) {
+      console.error('Failed to get walker color index:', await response.text());
+      return 0; // Default color in case of failure
+    }
+    
+    const data = await response.json();
+    
+    // Cache the result for future use
+    walkerColorCache[name] = data.colorIndex;
+    
+    return data.colorIndex;
+  } catch (error) {
+    console.error('Error fetching walker color index:', error);
+    return 0; // Default color in case of failure
+  }
+}
+
+// Synchronous version for immediate display while async version loads
+// This provides a smooth experience without flicker
+export function getWalkerColorIndexSync(name: string): number {
+  // If empty name, return default color index
+  if (!name) return 0;
   
-  // Check if we have a direct mapping for this name
-  if (nameMap[name] !== undefined) {
-    return nameMap[name];
+  // If we have it cached, return the cached value
+  if (walkerColorCache[name] !== undefined) {
+    return walkerColorCache[name];
   }
   
-  // Improved hash function for better distribution
-  let hash = 0;
-  // Use the first, middle, and last characters plus length to improve uniqueness
-  const chars = name.toLowerCase().split('');
-  const first = chars[0] ? chars[0].charCodeAt(0) : 0;
-  const middle = chars[Math.floor(chars.length/2)] ? chars[Math.floor(chars.length/2)].charCodeAt(0) : 0;
-  const last = chars[chars.length-1] ? chars[chars.length-1].charCodeAt(0) : 0;
-  
-  hash = ((first * 31) ^ (middle * 17) ^ (last * 13)) + name.length;
-  
-  return Math.abs(hash % 10); // 10 different colors
+  // If not cached, return a temporary placeholder
+  // This will later be updated by the async version
+  return 0;
 }
