@@ -14,9 +14,17 @@ interface ScheduleProps {
   schedule: Record<string, WalkingSlot[]>;
   userName: string;
   onUpdateUserName: (name: string) => void;
+  userPhone: string;
+  onUpdateUserPhone: (phone: string) => void;
 }
 
-const Schedule: React.FC<ScheduleProps> = ({ schedule, userName, onUpdateUserName }) => {
+const Schedule: React.FC<ScheduleProps> = ({ 
+  schedule, 
+  userName, 
+  onUpdateUserName,
+  userPhone,
+  onUpdateUserPhone
+}) => {
   const [bookingDate, setBookingDate] = useState<string>('');
   const [deleteSlot, setDeleteSlot] = useState<WalkingSlot | null>(null);
   const [colorIndices, setColorIndices] = useState<Record<string, number>>({});

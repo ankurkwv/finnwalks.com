@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { formatDate, getAvailableTimes } from '../lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { InsertSlot } from '@shared/schema';
+import PhoneInput from 'react-phone-number-input/input';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -17,6 +18,8 @@ interface BookingModalProps {
   bookedTimes: string[];
   userName: string;
   onUpdateUserName: (name: string) => void;
+  userPhone: string;
+  onUpdateUserPhone: (phone: string) => void;
   isSubmitting: boolean;
 }
 
@@ -28,24 +31,28 @@ const BookingModal: React.FC<BookingModalProps> = ({
   bookedTimes,
   userName,
   onUpdateUserName,
+  userPhone,
+  onUpdateUserPhone,
   isSubmitting
 }) => {
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
   const [name, setName] = useState<string>(userName);
+  const [phone, setPhone] = useState<string>(userPhone);
   const { toast } = useToast();
   
   // Available times for this day
   const availableTimes = getAvailableTimes(bookedTimes);
   
-  // Reset form and initialize name when modal opens
+  // Reset form and initialize name and phone when modal opens
   useEffect(() => {
     if (isOpen) {
       setSelectedTime('');
       setNotes('');
       setName(userName); // Initialize with the stored name
+      setPhone(userPhone); // Initialize with the stored phone
     }
-  }, [isOpen, userName]);
+  }, [isOpen, userName, userPhone]);
   
   const handleSubmit = () => {
     if (!selectedTime) {
@@ -71,10 +78,16 @@ const BookingModal: React.FC<BookingModalProps> = ({
       onUpdateUserName(name.trim());
     }
     
+    // Update the user phone in localStorage if it changed
+    if (phone !== userPhone) {
+      onUpdateUserPhone(phone);
+    }
+    
     onSubmit({
       date,
       time: selectedTime,
       name: name.trim(),
+      phone,
       notes: notes.trim() || undefined
     });
   };
@@ -101,6 +114,24 @@ const BookingModal: React.FC<BookingModalProps> = ({
               onChange={(e) => setName(e.target.value)}
               className="w-full"
             />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="walker-phone">Phone Number</Label>
+            <div className="phone-input-container border rounded-md p-2 flex items-center bg-white">
+              <PhoneInput
+                id="walker-phone"
+                placeholder="(555) 555-5555"
+                value={phone}
+                onChange={setPhone}
+                className="w-full focus:outline-none"
+                country="US"
+                style={{ border: 'none', width: '100%', height: '24px' }}
+              />
+            </div>
+            <p className="text-xs text-gray-500">
+              US numbers only. You'll receive confirmation texts.
+            </p>
           </div>
           
           <div className="space-y-2">

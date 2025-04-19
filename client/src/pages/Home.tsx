@@ -88,7 +88,9 @@ const Home: React.FC = () => {
           <Schedule 
             schedule={schedule} 
             userName={userName} 
-            onUpdateUserName={setUserName} 
+            onUpdateUserName={setUserName}
+            userPhone={userPhone}
+            onUpdateUserPhone={setUserPhone}
           />
         ) : (
           <div className="text-center py-12">
