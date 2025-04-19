@@ -44,122 +44,309 @@ const BookingAnimation: React.FC<BookingAnimationProps> = ({ isVisible, onComple
         >
           {step === 0 && (
             <motion.div 
-              className="bg-green-100 p-4 rounded-full"
+              className="relative bg-green-100 p-6 rounded-full"
               initial={{ scale: 0.5, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1, rotate: [0, 10, -10, 0] }}
-              transition={{ duration: 0.5 }}
+              animate={{ 
+                scale: 1, 
+                opacity: 1,
+              }}
+              transition={{ 
+                type: "spring",
+                damping: 12,
+                stiffness: 200
+              }}
             >
-              <Check className="h-14 w-14 text-green-600" />
+              <motion.div
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: 1 }}
+                transition={{ 
+                  delay: 0.2, 
+                  duration: 0.5, 
+                  ease: "easeOut" 
+                }}
+                className="absolute inset-0 flex items-center justify-center"
+              >
+                <svg 
+                  className="w-20 h-20" 
+                  viewBox="0 0 50 50"
+                  stroke="#22c55e"
+                  strokeWidth="3"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <motion.path
+                    initial={{ pathLength: 0 }}
+                    animate={{ pathLength: 1 }}
+                    transition={{ duration: 0.3, delay: 0.2 }}
+                    d="M 10,25 L 20,35 L 40,15"
+                  />
+                </svg>
+              </motion.div>
+              
+              <motion.div
+                className="absolute -inset-1 rounded-full opacity-50"
+                initial={{ scale: 0 }}
+                animate={{ scale: [0, 1.2, 1] }}
+                transition={{ 
+                  delay: 0.1, 
+                  duration: 0.8,
+                  times: [0, 0.6, 1]
+                }}
+                style={{
+                  background: "radial-gradient(circle, rgba(74, 222, 128, 0.4) 0%, rgba(74, 222, 128, 0) 70%)"
+                }}
+              />
+              
+              <Check className="h-14 w-14 text-green-600 opacity-0" />
             </motion.div>
           )}
           
           {step === 1 && (
             <>
               <motion.div
-                className="mb-4"
+                className="mb-4 relative"
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.3 }}
               >
-                <svg width="120" height="120" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  {/* Dog silhouette */}
+                <svg width="200" height="170" viewBox="0 0 800 680" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  {/* Background circle */}
+                  <motion.circle 
+                    cx="400" 
+                    cy="340" 
+                    r="320" 
+                    fill="#F0F9FF"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ duration: 0.5 }}
+                  />
+                  
+                  {/* Dog body */}
                   <motion.path 
-                    d="M300,170 C320,160 340,160 350,180 C360,200 350,220 330,230 C320,240 310,230 300,220 C290,210 280,200 260,190 C240,180 220,180 200,190 C180,200 170,210 160,230 C150,250 140,270 130,290 C120,310 100,320 80,310 C60,300 50,280 60,260 C70,240 90,230 110,240 C130,250 140,270 160,280 C180,290 200,290 220,280 C240,270 250,250 260,230 C270,210 280,190 300,170 Z"
+                    d="M460,360 C450,400 420,440 370,460 C320,480 250,480 200,460 C150,440 130,390 120,350 C110,310 120,270 130,240 C140,210 160,170 200,150 C240,130 280,130 320,140 C360,150 400,180 420,220 C440,260 450,290 460,360 Z" 
                     fill="#F9B17A"
                     initial={{ pathLength: 0, opacity: 0 }}
                     animate={{ pathLength: 1, opacity: 1 }}
-                    transition={{ duration: 1, delay: 0.2 }}
+                    transition={{ duration: 0.8, delay: 0.2 }}
                   />
-
-                  {/* Dog ear */}
+                  
+                  {/* Left ear */}
                   <motion.path 
-                    d="M330,180 C340,170 350,150 340,130 C330,110 310,100 290,110 C270,120 260,140 270,160 C280,180 290,190 310,190 C320,190 325,185 330,180 Z"
+                    d="M210,160 C190,130 150,110 120,130 C90,150 80,190 100,230 C120,270 150,290 190,280 C230,270 240,210 210,160 Z" 
                     fill="#E89B6D"
                     initial={{ pathLength: 0, opacity: 0 }}
                     animate={{ pathLength: 1, opacity: 1 }}
-                    transition={{ duration: 0.8, delay: 0.5 }}
+                    transition={{ duration: 0.5, delay: 0.4 }}
                   />
-
-                  {/* Dog eye */}
-                  <motion.circle 
-                    cx="310" 
-                    cy="170" 
-                    r="8" 
-                    fill="#333333"
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ duration: 0.5, delay: 1 }}
-                  />
-
-                  {/* Dog nose */}
-                  <motion.circle 
-                    cx="340" 
-                    cy="190" 
-                    r="10" 
-                    fill="#333333"
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ duration: 0.5, delay: 1.2 }}
-                  />
-
-                  {/* Tail wagging animation */}
+                  
+                  {/* Right ear */}
                   <motion.path 
-                    d="M120,290 C100,280 80,260 70,240 C60,220 50,200 60,180 C70,160 90,150 110,160"
+                    d="M330,150 C350,120 400,110 430,140 C460,170 460,210 440,240 C420,270 390,280 360,260 C330,240 310,180 330,150 Z" 
+                    fill="#E89B6D"
+                    initial={{ pathLength: 0, opacity: 0 }}
+                    animate={{ pathLength: 1, opacity: 1 }}
+                    transition={{ duration: 0.5, delay: 0.4 }}
+                  />
+                  
+                  {/* Dog snout */}
+                  <motion.path 
+                    d="M250,330 C250,300 270,280 300,280 C330,280 350,300 350,330 C350,360 330,390 300,390 C270,390 250,360 250,330 Z" 
+                    fill="#FFDBC2"
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.5, delay: 0.6 }}
+                  />
+                  
+                  {/* Left eye */}
+                  <motion.circle 
+                    cx="250" 
+                    cy="260" 
+                    r="15" 
+                    fill="#333333"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ duration: 0.3, delay: 0.7 }}
+                  />
+                  
+                  {/* Right eye */}
+                  <motion.circle 
+                    cx="350" 
+                    cy="260" 
+                    r="15" 
+                    fill="#333333"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ duration: 0.3, delay: 0.7 }}
+                  />
+                  
+                  {/* Nose */}
+                  <motion.circle 
+                    cx="300" 
+                    cy="330" 
+                    r="20" 
+                    fill="#333333"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ duration: 0.3, delay: 0.8 }}
+                  />
+                  
+                  {/* Mouth */}
+                  <motion.path 
+                    d="M260,350 C280,380 320,380 340,350" 
+                    stroke="#333333"
+                    strokeWidth="8"
+                    strokeLinecap="round"
+                    fill="none"
+                    initial={{ pathLength: 0 }}
+                    animate={{ pathLength: 1 }}
+                    transition={{ duration: 0.5, delay: 0.9 }}
+                  />
+                  
+                  {/* Tongue */}
+                  <motion.path 
+                    d="M290,370 C300,390 310,390 320,370" 
+                    fill="#FF6B6B"
+                    stroke="#FF6B6B"
+                    strokeWidth="8"
+                    strokeLinecap="round"
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ 
+                      opacity: [0, 1, 1, 0],
+                      y: [-10, 0, 0, -10]
+                    }}
+                    transition={{ 
+                      duration: 2,
+                      delay: 1.2,
+                      repeat: Infinity,
+                      repeatType: "loop",
+                      times: [0, 0.1, 0.9, 1]
+                    }}
+                  />
+
+                  {/* Tail */}
+                  <motion.path 
+                    d="M450,330 C480,310 510,300 540,310 C570,320 590,350 580,380 C570,410 540,420 510,410"
                     stroke="#F9B17A"
-                    strokeWidth="15"
+                    strokeWidth="25"
                     strokeLinecap="round"
                     fill="none"
                     initial={{ pathLength: 0, opacity: 0 }}
                     animate={{ 
                       pathLength: 1,
                       opacity: 1,
-                      rotate: [0, 10, -10, 10, -10, 0],
+                      rotate: [0, 5, -5, 5, -5, 0],
                     }}
                     transition={{ 
-                      pathLength: { duration: 0.8, delay: 0.8 },
-                      opacity: { duration: 0.8, delay: 0.8 },
+                      pathLength: { duration: 0.5, delay: 0.5 },
+                      opacity: { duration: 0.5, delay: 0.5 },
                       rotate: { 
                         duration: 1.5, 
+                        delay: 1.0, 
+                        repeat: Infinity,
+                        repeatType: "mirror",
+                        ease: "easeInOut"
+                      }
+                    }}
+                    style={{
+                      originX: "450px",
+                      originY: "330px"
+                    }}
+                  />
+                  
+                  {/* Collar */}
+                  <motion.path 
+                    d="M240,420 C270,440 330,440 360,420" 
+                    stroke="#4f46e5"
+                    strokeWidth="12"
+                    strokeLinecap="round"
+                    fill="none"
+                    initial={{ pathLength: 0 }}
+                    animate={{ pathLength: 1 }}
+                    transition={{ duration: 0.5, delay: 1 }}
+                  />
+                  
+                  {/* Collar tag */}
+                  <motion.circle 
+                    cx="300" 
+                    cy="435" 
+                    r="10" 
+                    fill="#FFD700"
+                    initial={{ scale: 0 }}
+                    animate={{ 
+                      scale: 1,
+                      y: [0, -3, 0, -3, 0]
+                    }}
+                    transition={{ 
+                      scale: { duration: 0.3, delay: 1.1 },
+                      y: { 
+                        duration: 1, 
                         delay: 1.5, 
                         repeat: Infinity,
-                        repeatType: "mirror"
+                        repeatType: "loop",
+                        times: [0, 0.25, 0.5, 0.75, 1]
                       }
                     }}
                   />
-
+                  
                   {/* Celebratory stars/particles */}
-                  {[...Array(8)].map((_, i) => (
-                    <motion.circle
-                      key={i}
-                      cx={200 + Math.cos(i * Math.PI / 4) * 150}
-                      cy={200 + Math.sin(i * Math.PI / 4) * 150}
-                      r="6"
-                      fill="#FFD700"
-                      initial={{ scale: 0, opacity: 0 }}
-                      animate={{ 
-                        scale: [0, 1.5, 0],
-                        opacity: [0, 1, 0],
-                        x: [0, Math.cos(i * Math.PI / 4) * 30],
-                        y: [0, Math.sin(i * Math.PI / 4) * 30]
-                      }}
-                      transition={{ 
-                        duration: 1.5,
-                        delay: 1.2 + (i * 0.1),
-                        repeat: 2,
-                        repeatType: "loop"
-                      }}
-                    />
+                  {[...Array(12)].map((_, i) => (
+                    <motion.g key={i}>
+                      <motion.circle
+                        cx={400 + Math.cos(i * Math.PI / 6) * 250}
+                        cy={340 + Math.sin(i * Math.PI / 6) * 250}
+                        r="8"
+                        fill={i % 3 === 0 ? "#FFD700" : (i % 3 === 1 ? "#4f46e5" : "#FF6B6B")}
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ 
+                          scale: [0, 1.5, 0],
+                          opacity: [0, 1, 0],
+                          x: [0, Math.cos(i * Math.PI / 6) * 40],
+                          y: [0, Math.sin(i * Math.PI / 6) * 40]
+                        }}
+                        transition={{ 
+                          duration: 2,
+                          delay: 1 + (i * 0.1),
+                          repeat: Infinity,
+                          repeatType: "loop",
+                          repeatDelay: 1
+                        }}
+                      />
+                      <motion.path
+                        d={`M${400 + Math.cos((i + 0.5) * Math.PI / 6) * 200},${340 + Math.sin((i + 0.5) * Math.PI / 6) * 200} l5,0 l-5,5 l-5,-5 l5,0 l0,-5 l0,5 Z`}
+                        fill={i % 3 === 0 ? "#4f46e5" : (i % 3 === 1 ? "#FFD700" : "#FF6B6B")}
+                        initial={{ scale: 0, opacity: 0, rotate: 0 }}
+                        animate={{ 
+                          scale: [0, 1, 0],
+                          opacity: [0, 1, 0],
+                          rotate: [0, 180],
+                          x: [0, Math.cos((i + 0.5) * Math.PI / 6) * 60],
+                          y: [0, Math.sin((i + 0.5) * Math.PI / 6) * 60]
+                        }}
+                        transition={{ 
+                          duration: 2.5,
+                          delay: 1.5 + (i * 0.1),
+                          repeat: Infinity,
+                          repeatType: "loop",
+                          repeatDelay: 0.5
+                        }}
+                      />
+                    </motion.g>
                   ))}
                 </svg>
               </motion.div>
               
               <motion.h3 
-                className="text-xl font-bold text-gray-900 mb-2 text-center"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
+                className="text-2xl font-bold text-gray-900 mb-2 text-center"
+                initial={{ opacity: 0, y: 20, scale: 0.8 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ 
+                  delay: 0.4,
+                  type: "spring",
+                  damping: 12 
+                }}
               >
-                Walk Booked!
+                Woohoo! Walk Booked!
               </motion.h3>
               
               <motion.p 
@@ -168,8 +355,39 @@ const BookingAnimation: React.FC<BookingAnimationProps> = ({ isVisible, onComple
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
               >
-                Finn is excited for the walk!
+                Finn can't wait to go on this adventure!
               </motion.p>
+              
+              <motion.div
+                className="mt-4 inline-flex items-center justify-center"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ 
+                  opacity: 1, 
+                  scale: [0.8, 1.05, 1],
+                  y: [20, 0]
+                }}
+                transition={{ 
+                  delay: 0.8, 
+                  duration: 0.5,
+                  times: [0, 0.7, 1]
+                }}
+              >
+                <motion.span 
+                  className="text-sm bg-blue-100 text-blue-800 font-medium px-3 py-1 rounded-full"
+                  whileHover={{ scale: 1.05 }}
+                  animate={{ 
+                    boxShadow: ["0 0 0 rgba(79, 70, 229, 0)", "0 0 10px rgba(79, 70, 229, 0.3)", "0 0 0 rgba(79, 70, 229, 0)"]
+                  }}
+                  transition={{
+                    boxShadow: {
+                      repeat: Infinity,
+                      duration: 2,
+                    }
+                  }}
+                >
+                  💙 Thanks for walking Finn! 💙
+                </motion.span>
+              </motion.div>
             </>
           )}
         </motion.div>
