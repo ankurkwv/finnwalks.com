@@ -40,11 +40,15 @@ export async function sendSmsNotification(action: 'book' | 'cancel', slot: Walki
       message = `${slot.name} canceled ${formattedDate} at ${formattedTime}.`;
     }
 
+    // Log notification details (without exposing actual phone numbers)
+    console.log(`Sending SMS notification: Action=${action}, Message="${message}"`);
+    
     // Send to all recipients (comma-separated)
     const recipients = alertTo.split(',').map(num => num.trim());
+    console.log(`Recipients count: ${recipients.length}`);
     
     // Send messages
-    await Promise.all(
+    const results = await Promise.all(
       recipients.map(to => 
         twilio.messages.create({
           body: message,
@@ -54,9 +58,15 @@ export async function sendSmsNotification(action: 'book' | 'cancel', slot: Walki
       )
     );
     
+    // Log success
+    console.log(`SMS notifications sent successfully! SID: ${results[0]?.sid || 'unknown'}`);
     return true;
   } catch (error) {
     console.error('Error sending SMS notification:', error);
+    if (error.code) {
+      console.error(`Twilio Error Code: ${error.code}`);
+      console.error(`Twilio Error Message: ${error.message}`);
+    }
     return false;
   }
 }
