@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom Variables */
+:root {
+  --finn-primary: #4f46e5; /* Indigo shade for FinnWalks brand color */
+}
+
+.text-finn-primary {
+  color: var(--finn-primary);
+}
+
 @layer base {
   * {
     @apply border-border;

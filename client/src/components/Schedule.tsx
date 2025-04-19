@@ -6,6 +6,7 @@ import { formatDate, formatTimeRange, getWalkerColorIndex, getWalkerColorIndexSy
 import { PlusIcon, Trash2Icon } from 'lucide-react';
 import BookingModal from './BookingModal';
 import DeleteModal from './DeleteModal';
+import BookingAnimation from './BookingAnimation';
 import { useAddSlot, useDeleteSlot } from '../hooks/useSchedule';
 import { useToast } from '@/hooks/use-toast';
 
@@ -19,6 +20,7 @@ const Schedule: React.FC<ScheduleProps> = ({ schedule, userName, onUpdateUserNam
   const [bookingDate, setBookingDate] = useState<string>('');
   const [deleteSlot, setDeleteSlot] = useState<WalkingSlot | null>(null);
   const [colorIndices, setColorIndices] = useState<Record<string, number>>({});
+  const [showAnimation, setShowAnimation] = useState(false);
   const { toast } = useToast();
   
   // Mutations for adding and deleting slots
@@ -78,11 +80,11 @@ const Schedule: React.FC<ScheduleProps> = ({ schedule, userName, onUpdateUserNam
     // Use optimistic updates for immediate feedback
     addSlotMutation.mutate(data, {
       onSuccess: () => {
-        toast({
-          title: "Success",
-          description: "Walking slot booked successfully",
-        });
+        // Close the booking modal
         closeBookingModal();
+        
+        // Show the animation instead of toast
+        setShowAnimation(true);
       },
       onError: (error) => {
         toast({
@@ -92,6 +94,11 @@ const Schedule: React.FC<ScheduleProps> = ({ schedule, userName, onUpdateUserNam
         });
       }
     });
+  };
+  
+  // Handle animation completion
+  const handleAnimationComplete = () => {
+    setShowAnimation(false);
   };
   
   // Handle delete modal
@@ -255,6 +262,12 @@ const Schedule: React.FC<ScheduleProps> = ({ schedule, userName, onUpdateUserNam
         onConfirm={handleDeleteConfirm}
         slot={deleteSlot}
         isDeleting={deleteSlotMutation.isPending}
+      />
+
+      {/* Booking Success Animation */}
+      <BookingAnimation 
+        isVisible={showAnimation}
+        onComplete={handleAnimationComplete}
       />
     </>
   );
