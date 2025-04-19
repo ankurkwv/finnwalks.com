@@ -119,18 +119,28 @@ const Schedule: React.FC<ScheduleProps> = ({ schedule, userName, onUpdateUserNam
                         className={`shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md overflow-hidden border-l-4 bg-opacity-30`}
                         style={{
                           borderLeftColor: [
-                            '#a4c2f4', // finn-blue
-                            '#b6d7a8', // finn-green
-                            '#ffe599', // finn-yellow
-                            '#d5a6bd', // finn-purple
-                            '#ea9999'  // finn-red
+                            '#a4c2f4', // blue
+                            '#b6d7a8', // green
+                            '#ffe599', // yellow
+                            '#d5a6bd', // purple
+                            '#ea9999', // red
+                            '#9fc5e8', // light blue
+                            '#d5d5d5', // gray
+                            '#f9cb9c', // orange
+                            '#b4a7d6', // lavender
+                            '#c9daf8'  // sky blue
                           ][colorIndex],
                           backgroundColor: [
-                            'rgba(164, 194, 244, 0.3)',
-                            'rgba(182, 215, 168, 0.3)',
-                            'rgba(255, 229, 153, 0.3)',
-                            'rgba(213, 166, 189, 0.3)',
-                            'rgba(234, 153, 153, 0.3)'
+                            'rgba(164, 194, 244, 0.3)', // blue
+                            'rgba(182, 215, 168, 0.3)', // green
+                            'rgba(255, 229, 153, 0.3)', // yellow
+                            'rgba(213, 166, 189, 0.3)', // purple
+                            'rgba(234, 153, 153, 0.3)', // red
+                            'rgba(159, 197, 232, 0.3)', // light blue
+                            'rgba(213, 213, 213, 0.3)', // gray
+                            'rgba(249, 203, 156, 0.3)', // orange
+                            'rgba(180, 167, 214, 0.3)', // lavender
+                            'rgba(201, 218, 248, 0.3)'  // sky blue
                           ][colorIndex]
                         }}
                       >

@@ -92,5 +92,5 @@ export function getWalkerColorIndex(name: string): number {
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
-  return Math.abs(hash % 5); // 5 different colors
+  return Math.abs(hash % 10); // 10 different colors
 }
