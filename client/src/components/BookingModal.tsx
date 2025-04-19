@@ -38,7 +38,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
   const [name, setName] = useState<string>(userName);
-  const [phone, setPhone] = useState<string>(userPhone);
+  const [phone, setPhone] = useState<string>(userPhone || '');
   const { toast } = useToast();
   
   // Available times for this day
@@ -83,11 +83,21 @@ const BookingModal: React.FC<BookingModalProps> = ({
       onUpdateUserPhone(phone);
     }
     
+    // Validate phone number if provided
+    if (phone && !phone.startsWith('+')) {
+      toast({
+        title: "Phone Number Format",
+        description: "Please use a valid phone number with country code or leave it blank",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     onSubmit({
       date,
       time: selectedTime,
       name: name.trim(),
-      phone,
+      phone: phone || undefined,
       notes: notes.trim() || undefined
     });
   };
@@ -123,7 +133,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                 id="walker-phone"
                 placeholder="(555) 555-5555"
                 value={phone}
-                onChange={setPhone}
+                onChange={(value) => setPhone(value || '')}
                 className="w-full focus:outline-none"
                 country="US"
                 style={{ border: 'none', width: '100%', height: '24px' }}

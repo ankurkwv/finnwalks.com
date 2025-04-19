@@ -260,6 +260,8 @@ const Schedule: React.FC<ScheduleProps> = ({
         bookedTimes={bookingDate ? (schedule[bookingDate] || []).map(s => s.time) : []}
         userName={userName}
         onUpdateUserName={onUpdateUserName}
+        userPhone={userPhone}
+        onUpdateUserPhone={onUpdateUserPhone}
         isSubmitting={addSlotMutation.isPending}
       />
       

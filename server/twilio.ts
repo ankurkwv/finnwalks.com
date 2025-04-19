@@ -34,33 +34,51 @@ export async function sendSmsNotification(action: 'book' | 'cancel', slot: Walki
     const formattedTime = formatTime(slot.time);
     
     // Prepare message based on action
-    let message = '';
+    let ownerMessage = '';
     if (action === 'book') {
-      message = `${slot.name} booked ${formattedDate} at ${formattedTime}. Notes: ${slot.notes || '—'}`;
+      ownerMessage = `${slot.name} booked ${formattedDate} at ${formattedTime}. Notes: ${slot.notes || '—'}`;
     } else {
-      message = `${slot.name} canceled ${formattedDate} at ${formattedTime}.`;
+      ownerMessage = `${slot.name} canceled ${formattedDate} at ${formattedTime}.`;
     }
 
     // Log notification details (without exposing actual phone numbers)
-    console.log(`Sending SMS notification: Action=${action}, Message="${message}"`);
+    console.log(`Sending SMS notification: Action=${action}, Message="${ownerMessage}"`);
     
-    // Send to all recipients (comma-separated)
-    const recipients = alertTo.split(',').map(num => num.trim());
-    console.log(`Recipients count: ${recipients.length}`);
+    // Send to all owner recipients (comma-separated)
+    const ownerRecipients = alertTo.split(',').map(num => num.trim());
+    console.log(`Owner recipients count: ${ownerRecipients.length}`);
     
-    // Send messages
-    const results = await Promise.all(
-      recipients.map(to => 
+    // Send messages to owners
+    const ownerResults = await Promise.all(
+      ownerRecipients.map(to => 
         twilioClient.messages.create({
-          body: message,
+          body: ownerMessage,
           from: twilioFrom,
           to
         })
       )
     );
     
+    // Send confirmation to walker if phone number is provided
+    if (slot.phone && action === 'book') {
+      const walkerMessage = `Your walk with Finn is confirmed for ${formattedDate} at ${formattedTime}. Thanks for helping walk Finn! 🐕`;
+      
+      try {
+        const walkerResult = await twilioClient.messages.create({
+          body: walkerMessage,
+          from: twilioFrom,
+          to: slot.phone
+        });
+        
+        console.log(`Confirmation SMS sent to walker! SID: ${walkerResult.sid}`);
+      } catch (walkerError) {
+        // Log but don't fail if walker notification fails
+        console.error('Failed to send confirmation to walker:', walkerError);
+      }
+    }
+    
     // Log success
-    console.log(`SMS notifications sent successfully! SID: ${results[0]?.sid || 'unknown'}`);
+    console.log(`SMS notifications sent successfully! SID: ${ownerResults[0]?.sid || 'unknown'}`);
     return true;
   } catch (err) {
     const error = err as Error & { code?: string; };
