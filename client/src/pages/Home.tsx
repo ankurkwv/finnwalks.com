@@ -9,8 +9,9 @@ import { formatDateShort } from '../lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
 const Home: React.FC = () => {
-  // User name from local storage - will be set/updated in the booking modal now
+  // User info from local storage - will be set/updated in the booking modal now
   const [userName, setUserName] = useLocalStorage<string>('userName', '');
+  const [userPhone, setUserPhone] = useLocalStorage<string>('userPhone', '');
   
   // Info modal state
   const [showInfoModal, setShowInfoModal] = useState<boolean>(false);

@@ -8,6 +8,7 @@ export const walkingSlots = pgTable('walking_slots', {
   date: varchar('date', { length: 10 }).notNull(), // YYYY-MM-DD format
   time: varchar('time', { length: 4 }).notNull(),  // HHMM format (24-hour)
   name: text('name').notNull(),                    // Walker's name
+  phone: text('phone'),                            // Walker's phone number (E.164 format)
   notes: text('notes'),                            // Optional notes
   timestamp: integer('timestamp').notNull(),       // Timestamp for when the slot was booked
 });
@@ -22,6 +23,7 @@ export type WalkingSlot = {
   date: string;       // YYYY-MM-DD format
   time: string;       // HHMM format (24-hour)
   name: string;       // Walker's name
+  phone?: string;     // Walker's phone number (E.164 format)
   notes?: string;     // Optional notes
   timestamp: number;  // Timestamp for when the slot was booked
 };
@@ -31,6 +33,7 @@ export const insertSlotSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format"),
   time: z.string().regex(/^\d{4}$/, "Time must be in 24-hour HHMM format"),
   name: z.string().min(1, "Name is required"),
+  phone: z.string().optional(),
   notes: z.string().optional(),
 });
 

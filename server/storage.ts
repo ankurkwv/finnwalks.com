@@ -455,7 +455,7 @@ export class DatabaseStorage implements IStorage {
 
   // Add a new slot
   async addSlot(slotData: InsertSlot): Promise<WalkingSlot> {
-    const { date, time, name, notes } = slotData;
+    const { date, time, name, phone, notes } = slotData;
     
     // Check if slot already exists
     const existingSlot = await this.getSlot(date, time);
@@ -468,6 +468,7 @@ export class DatabaseStorage implements IStorage {
       date,
       time,
       name,
+      phone: phone || undefined,
       notes: notes || '',
       timestamp: Math.floor(Date.now() / 1000)
     };
