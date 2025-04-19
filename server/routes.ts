@@ -101,33 +101,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ error: "Internal server error" });
     }
   });
-  
-  // Get all walkers for dropdown
-  app.get("/api/walkers", async (_req: Request, res: Response) => {
-    try {
-      const walkers = await storage.getWalkersList();
-      return res.status(200).json(walkers);
-    } catch (error) {
-      console.error("Walkers fetch error:", error);
-      return res.status(500).json({ error: "Failed to fetch walkers list" });
-    }
-  });
-  
-  // Add a new walker (when they book with a new name/phone)
-  app.post("/api/walker", async (req: Request, res: Response) => {
-    try {
-      const { name, phone } = req.body;
-      if (!name) {
-        return res.status(400).json({ error: "Name is required" });
-      }
-      
-      const walker = await storage.addWalker({ name, phone });
-      return res.status(201).json(walker);
-    } catch (error) {
-      console.error("Walker creation error:", error);
-      return res.status(500).json({ error: "Failed to create walker" });
-    }
-  });
 
   const httpServer = createServer(app);
   return httpServer;
