@@ -1,5 +1,6 @@
 import { WalkingSlot } from "@shared/schema";
 import { formatTime } from "../client/src/lib/utils";
+import twilio from 'twilio';
 
 // Format date to a more readable format
 function formatDate(dateStr: string): string {
@@ -25,8 +26,8 @@ export async function sendSmsNotification(action: 'book' | 'cancel', slot: Walki
   }
 
   try {
-    // Import Twilio
-    const twilio = require('twilio')(twilioSid, twilioToken);
+    // Create Twilio client
+    const twilioClient = twilio(twilioSid, twilioToken);
     
     // Format date and time
     const formattedDate = formatDate(slot.date);
@@ -50,7 +51,7 @@ export async function sendSmsNotification(action: 'book' | 'cancel', slot: Walki
     // Send messages
     const results = await Promise.all(
       recipients.map(to => 
-        twilio.messages.create({
+        twilioClient.messages.create({
           body: message,
           from: twilioFrom,
           to
@@ -61,7 +62,8 @@ export async function sendSmsNotification(action: 'book' | 'cancel', slot: Walki
     // Log success
     console.log(`SMS notifications sent successfully! SID: ${results[0]?.sid || 'unknown'}`);
     return true;
-  } catch (error) {
+  } catch (err) {
+    const error = err as Error & { code?: string; };
     console.error('Error sending SMS notification:', error);
     if (error.code) {
       console.error(`Twilio Error Code: ${error.code}`);
