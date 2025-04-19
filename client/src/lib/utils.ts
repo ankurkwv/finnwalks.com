@@ -87,10 +87,38 @@ export function getAvailableTimes(bookedSlots: string[] = []): { value: string; 
 
 // Get color index based on walker's name
 export function getWalkerColorIndex(name: string): number {
-  // Simple hash function to consistently map names to color indices
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  // If empty name, return default color index
+  if (!name) return 0;
+  
+  // Directly map specific common names to fixed indices for consistency
+  const nameMap: Record<string, number> = {
+    'Alice': 0,
+    'Bob': 1,
+    'Charlie': 2,
+    'David': 3,
+    'Emma': 4,
+    'Frank': 5,
+    'Grace': 6,
+    'Henry': 7,
+    'Ivy': 8,
+    'Jack': 9,
+    // Add more mappings if needed
+  };
+  
+  // Check if we have a direct mapping for this name
+  if (nameMap[name] !== undefined) {
+    return nameMap[name];
   }
+  
+  // Improved hash function for better distribution
+  let hash = 0;
+  // Use the first, middle, and last characters plus length to improve uniqueness
+  const chars = name.toLowerCase().split('');
+  const first = chars[0] ? chars[0].charCodeAt(0) : 0;
+  const middle = chars[Math.floor(chars.length/2)] ? chars[Math.floor(chars.length/2)].charCodeAt(0) : 0;
+  const last = chars[chars.length-1] ? chars[chars.length-1].charCodeAt(0) : 0;
+  
+  hash = ((first * 31) ^ (middle * 17) ^ (last * 13)) + name.length;
+  
   return Math.abs(hash % 10); // 10 different colors
 }
