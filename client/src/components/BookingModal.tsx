@@ -127,10 +127,10 @@ const BookingModal: React.FC<BookingModalProps> = ({
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="notes">Notes (optional)</Label>
+            <Label htmlFor="notes">Notes (where do you plan to take him, how long, etc?)</Label>
             <Textarea
               id="notes"
-              placeholder="e.g., Taking him to the park"
+              placeholder="e.g., Taking him to Cato for an hour"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className="h-24 resize-none"

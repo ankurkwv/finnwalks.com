@@ -7,14 +7,27 @@ export interface IStorage {
   getSlot(date: string, time: string): Promise<WalkingSlot | null>;
   addSlot(slot: InsertSlot): Promise<WalkingSlot>;
   removeSlot(date: string, time: string): Promise<boolean>;
+  
+  // Methods for walker color management
+  getWalkerColorIndex(name: string): Promise<number>;
+  getAllWalkers(): Promise<{name: string, colorIndex: number}[]>;
 }
 
 // In-memory implementation for development
 class MemStorage implements IStorage {
   private slots: Record<string, WalkingSlot> = {};
+  // Track walkers and their color indices
+  private walkers: Record<string, number> = {};
+  // Total number of colors available in the app
+  private readonly MAX_COLORS = 10;
 
   private createSlotKey(date: string, time: string): string {
     return `${date}:${time}`;
+  }
+  
+  // Helper to create a consistent walker key
+  private createWalkerKey(name: string): string {
+    return `walker:${name}`;
   }
 
   async getSchedule(startDate: string): Promise<Record<string, WalkingSlot[]>> {
@@ -93,7 +106,47 @@ class MemStorage implements IStorage {
     delete this.slots[key];
     return true;
   }
+  
+  // Get walker color index - creates a new entry if walker doesn't exist
+  async getWalkerColorIndex(name: string): Promise<number> {
+    // If walker exists, return their color index
+    if (this.walkers[name] !== undefined) {
+      return this.walkers[name];
+    }
+    
+    // Get the next available color index by finding the lowest unused index
+    const existingIndices = Object.values(this.walkers);
+    let nextIndex = 0;
+    
+    // Find the lowest available index
+    while (existingIndices.includes(nextIndex)) {
+      nextIndex = (nextIndex + 1) % this.MAX_COLORS;
+    }
+    
+    // Assign and save the new color index
+    this.walkers[name] = nextIndex;
+    return nextIndex;
+  }
+  
+  // Get all walkers with their color indices
+  async getAllWalkers(): Promise<{name: string, colorIndex: number}[]> {
+    return Object.entries(this.walkers).map(([name, colorIndex]) => ({
+      name,
+      colorIndex
+    }));
+  }
 }
+
+// Helper types for database values
+type WalkerData = {
+  colorIndex: number;
+};
+
+type SlotData = {
+  name: string;
+  notes: string;
+  timestamp: number;
+};
 
 // Replit Database implementation
 export class ReplitStorage implements IStorage {
@@ -107,6 +160,14 @@ export class ReplitStorage implements IStorage {
   private createSlotKey(date: string, time: string): string {
     return `slots:${date}:${time}`;
   }
+  
+  // Helper to create consistent walker keys
+  private createWalkerKey(name: string): string {
+    return `walker:${name}`;
+  }
+  
+  // Total number of colors available in the app
+  private readonly MAX_COLORS = 10;
 
   // Get schedule for a week
   async getSchedule(startDate: string): Promise<Record<string, WalkingSlot[]>> {
@@ -241,6 +302,77 @@ export class ReplitStorage implements IStorage {
     // Delete the slot
     await this.db.delete(key);
     return true;
+  }
+  
+  // Get walker color index - creates a new entry if walker doesn't exist
+  async getWalkerColorIndex(name: string): Promise<number> {
+    try {
+      const walkerKey = this.createWalkerKey(name);
+      
+      // Check if walker exists in database
+      const colorData = await this.db.get(walkerKey);
+      if (colorData && typeof colorData.colorIndex === 'number') {
+        return colorData.colorIndex;
+      }
+      
+      // Walker doesn't exist, need to assign a new color
+      
+      // Get all walkers to find the next available color index
+      const walkers = await this.getAllWalkers();
+      const existingIndices = walkers.map(walker => walker.colorIndex);
+      
+      // Find next available color index
+      let nextIndex = 0;
+      while (existingIndices.includes(nextIndex)) {
+        nextIndex = (nextIndex + 1) % this.MAX_COLORS;
+      }
+      
+      // Save the new walker with assigned color
+      await this.db.set(walkerKey, { colorIndex: nextIndex });
+      
+      return nextIndex;
+    } catch (error) {
+      console.error('Error getting walker color:', error);
+      // Return a default value in case of error
+      return 0;
+    }
+  }
+  
+  // Get all walkers with their color indices
+  async getAllWalkers(): Promise<{name: string, colorIndex: number}[]> {
+    const walkers: {name: string, colorIndex: number}[] = [];
+    
+    try {
+      // Get all keys from database
+      const allKeys = await this.db.list();
+      const keyArray = typeof allKeys === 'object' && !Array.isArray(allKeys) 
+        ? Object.keys(allKeys) 
+        : allKeys;
+        
+      // Filter for walker keys and extract data
+      if (Array.isArray(keyArray)) {
+        const walkerKeys = keyArray.filter(key => key.startsWith('walker:'));
+        
+        for (const key of walkerKeys) {
+          try {
+            const value = await this.db.get(key);
+            if (value && typeof value.colorIndex === 'number') {
+              const name = key.substring(7); // Remove 'walker:' prefix
+              walkers.push({
+                name,
+                colorIndex: value.colorIndex
+              });
+            }
+          } catch (e) {
+            console.error('Error fetching walker data:', key, e);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching walkers:', error);
+    }
+    
+    return walkers;
   }
 }
 
