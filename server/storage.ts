@@ -1,11 +1,12 @@
 import Database from "@replit/database";
-import { WalkingSlot, InsertSlot } from "@shared/schema";
+import { WalkingSlot, InsertSlot, Walker, InsertWalker } from "@shared/schema";
 import { eq, and, desc, asc, gte, lte } from 'drizzle-orm';
 import { db } from './db';
-import { walkingSlots, walkerColors } from '@shared/schema';
+import { walkingSlots, walkerColors, walkers } from '@shared/schema';
 
 // Interface for storage operations
 export interface IStorage {
+  // Slot management
   getSchedule(startDate: string): Promise<Record<string, WalkingSlot[]>>;
   getSlot(date: string, time: string): Promise<WalkingSlot | null>;
   addSlot(slot: InsertSlot): Promise<WalkingSlot>;
@@ -14,6 +15,11 @@ export interface IStorage {
   // Methods for walker color management
   getWalkerColorIndex(name: string): Promise<number>;
   getAllWalkers(): Promise<{name: string, colorIndex: number}[]>;
+
+  // Walker management for dropdown
+  getWalkersList(): Promise<Walker[]>;
+  getWalkerByName(name: string): Promise<Walker | null>;
+  addWalker(walker: InsertWalker): Promise<Walker>;
 }
 
 // In-memory implementation for development
@@ -383,6 +389,60 @@ export class ReplitStorage implements IStorage {
 export class DatabaseStorage implements IStorage {
   // Total number of colors available in the app
   private readonly MAX_COLORS = 10;
+  
+  // Walker management for dropdown
+  async getWalkersList(): Promise<Walker[]> {
+    try {
+      const result = await db.select().from(walkers);
+      return result;
+    } catch (error) {
+      console.error('Error fetching walkers list:', error);
+      return [];
+    }
+  }
+  
+  async getWalkerByName(name: string): Promise<Walker | null> {
+    try {
+      const result = await db.select().from(walkers).where(eq(walkers.name, name));
+      return result.length > 0 ? result[0] : null;
+    } catch (error) {
+      console.error('Error fetching walker by name:', error);
+      return null;
+    }
+  }
+  
+  async addWalker(walker: InsertWalker): Promise<Walker> {
+    try {
+      // Check if walker with this name already exists
+      const existing = await this.getWalkerByName(walker.name);
+      if (existing) {
+        // If exists, update the phone if provided and different
+        if (walker.phone && walker.phone !== existing.phone) {
+          const updated = await db
+            .update(walkers)
+            .set({ phone: walker.phone })
+            .where(eq(walkers.name, walker.name))
+            .returning();
+          return updated[0];
+        }
+        return existing;
+      }
+      
+      // Create new walker
+      const result = await db
+        .insert(walkers)
+        .values({
+          name: walker.name,
+          phone: walker.phone || null
+        })
+        .returning();
+      
+      return result[0];
+    } catch (error) {
+      console.error('Error adding walker:', error);
+      throw new Error('Failed to add walker');
+    }
+  }
 
   // Get schedule for a week
   async getSchedule(startDate: string): Promise<Record<string, WalkingSlot[]>> {

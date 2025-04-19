@@ -18,6 +18,12 @@ export const walkerColors = pgTable('walker_colors', {
   colorIndex: integer('color_index').notNull(),    // Color index (0-9)
 });
 
+export const walkers = pgTable('walkers', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull().unique(),           // Walker's name
+  phone: text('phone'),                            // Walker's phone number
+});
+
 // WalkingSlot type matches the database schema
 export type WalkingSlot = {
   date: string;       // YYYY-MM-DD format
@@ -45,6 +51,20 @@ export const deleteSlotSchema = z.object({
 
 export type InsertSlot = z.infer<typeof insertSlotSchema>;
 export type DeleteSlot = z.infer<typeof deleteSlotSchema>;
+
+// Walker type
+export type Walker = {
+  id: number;
+  name: string;
+  phone: string | null;
+};
+
+export const insertWalkerSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  phone: z.string().optional(),
+});
+
+export type InsertWalker = z.infer<typeof insertWalkerSchema>;
 
 export type DaySchedule = {
   date: string;
