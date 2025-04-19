@@ -1,5 +1,8 @@
 import Database from "@replit/database";
 import { WalkingSlot, InsertSlot } from "@shared/schema";
+import { eq, and, desc, asc, gte, lte } from 'drizzle-orm';
+import { db } from './db';
+import { walkingSlots, walkerColors } from '@shared/schema';
 
 // Interface for storage operations
 export interface IStorage {
@@ -376,10 +379,174 @@ export class ReplitStorage implements IStorage {
   }
 }
 
-// Decide which storage to use
-const useInMemory = process.env.NODE_ENV === 'development';
+// PostgreSQL database implementation
+export class DatabaseStorage implements IStorage {
+  // Total number of colors available in the app
+  private readonly MAX_COLORS = 10;
 
-// Create and export a storage instance
-export const storage = useInMemory 
-  ? new MemStorage() 
-  : new ReplitStorage();
+  // Get schedule for a week
+  async getSchedule(startDate: string): Promise<Record<string, WalkingSlot[]>> {
+    const schedule: Record<string, WalkingSlot[]> = {};
+    
+    // Generate 7 days from start date
+    const dates: string[] = [];
+    const start = new Date(startDate);
+    
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(start);
+      date.setDate(date.getDate() + i);
+      const dateStr = date.toISOString().split('T')[0];
+      dates.push(dateStr);
+      schedule[dateStr] = [];
+    }
+
+    try {
+      // Get all slots for the date range
+      const endDate = dates[dates.length - 1];
+      const slots = await db.select().from(walkingSlots)
+        .where(and(
+          gte(walkingSlots.date, startDate),
+          lte(walkingSlots.date, endDate)
+        ))
+        .orderBy(asc(walkingSlots.date), asc(walkingSlots.time));
+      
+      // Organize slots by date
+      for (const slot of slots) {
+        if (schedule[slot.date]) {
+          schedule[slot.date].push({
+            date: slot.date,
+            time: slot.time,
+            name: slot.name,
+            notes: slot.notes || '',
+            timestamp: slot.timestamp
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Schedule fetch error:', error);
+    }
+
+    return schedule;
+  }
+
+  // Get specific slot
+  async getSlot(date: string, time: string): Promise<WalkingSlot | null> {
+    try {
+      const [slot] = await db.select().from(walkingSlots)
+        .where(and(
+          eq(walkingSlots.date, date),
+          eq(walkingSlots.time, time)
+        ));
+      
+      if (!slot) return null;
+      
+      return {
+        date: slot.date,
+        time: slot.time,
+        name: slot.name,
+        notes: slot.notes || '',
+        timestamp: slot.timestamp
+      };
+    } catch (error) {
+      console.error('Error getting slot:', error);
+      return null;
+    }
+  }
+
+  // Add a new slot
+  async addSlot(slotData: InsertSlot): Promise<WalkingSlot> {
+    const { date, time, name, notes } = slotData;
+    
+    // Check if slot already exists
+    const existingSlot = await this.getSlot(date, time);
+    if (existingSlot) {
+      throw new Error('Slot is already booked');
+    }
+
+    // Create the new slot
+    const newSlot = {
+      date,
+      time,
+      name,
+      notes: notes || '',
+      timestamp: Math.floor(Date.now() / 1000)
+    };
+
+    // Insert into database
+    await db.insert(walkingSlots).values(newSlot);
+    
+    return newSlot;
+  }
+
+  // Remove a slot
+  async removeSlot(date: string, time: string): Promise<boolean> {
+    // Check if slot exists
+    const existingSlot = await this.getSlot(date, time);
+    if (!existingSlot) {
+      return false;
+    }
+
+    // Delete the slot
+    await db.delete(walkingSlots)
+      .where(and(
+        eq(walkingSlots.date, date),
+        eq(walkingSlots.time, time)
+      ));
+    
+    return true;
+  }
+  
+  // Get walker color index - creates a new entry if walker doesn't exist
+  async getWalkerColorIndex(name: string): Promise<number> {
+    try {
+      // Check if walker exists in database
+      const [walker] = await db.select().from(walkerColors)
+        .where(eq(walkerColors.name, name));
+      
+      if (walker) {
+        return walker.colorIndex;
+      }
+      
+      // Walker doesn't exist, need to assign a new color
+      
+      // Get all walkers to find the next available color index
+      const walkers = await this.getAllWalkers();
+      const existingIndices = walkers.map(walker => walker.colorIndex);
+      
+      // Find next available color index
+      let nextIndex = 0;
+      while (existingIndices.includes(nextIndex)) {
+        nextIndex = (nextIndex + 1) % this.MAX_COLORS;
+      }
+      
+      // Save the new walker with assigned color
+      await db.insert(walkerColors).values({
+        name,
+        colorIndex: nextIndex
+      });
+      
+      return nextIndex;
+    } catch (error) {
+      console.error('Error getting walker color:', error);
+      // Return a default value in case of error
+      return 0;
+    }
+  }
+  
+  // Get all walkers with their color indices
+  async getAllWalkers(): Promise<{name: string, colorIndex: number}[]> {
+    try {
+      const walkers = await db.select().from(walkerColors);
+      return walkers.map(walker => ({
+        name: walker.name,
+        colorIndex: walker.colorIndex
+      }));
+    } catch (error) {
+      console.error('Error fetching walkers:', error);
+      return [];
+    }
+  }
+}
+
+// Create and export a database storage instance
+export const storage = new DatabaseStorage();
