@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -7,8 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { formatDate, getAvailableTimes } from '../lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { InsertSlot } from '@shared/schema';
+import { InsertSlot, InsertWalker, Walker } from '@shared/schema';
 import PhoneInput from 'react-phone-number-input/input';
+import { Combobox, ComboboxOption } from '@/components/ui/combobox';
+import { useWalkers } from '@/hooks/useWalkers';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -39,7 +41,45 @@ const BookingModal: React.FC<BookingModalProps> = ({
   const [notes, setNotes] = useState<string>('');
   const [name, setName] = useState<string>(userName);
   const [phone, setPhone] = useState<string>(userPhone || '');
+  const [manualNameEntry, setManualNameEntry] = useState<boolean>(false);
   const { toast } = useToast();
+  
+  // Fetch walkers list
+  const { data: walkers = [], isLoading: isLoadingWalkers } = useWalkers();
+  
+  // Function to add a new walker
+  const addNewWalker = useCallback(async (walkerName: string) => {
+    try {
+      const response = await fetch('/api/walker', {
+        method: 'POST',
+        body: JSON.stringify({ 
+          name: walkerName, 
+          phone: phone || undefined 
+        }),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to add walker');
+      }
+      
+      // Force refetch of walkers list
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error adding walker:', error);
+      toast({
+        title: "Error",
+        description: "Could not add new walker",
+        variant: "destructive",
+      });
+    }
+  }, [phone, toast]);
   
   // Available times for this day
   const availableTimes = getAvailableTimes(bookedTimes);
@@ -117,13 +157,61 @@ const BookingModal: React.FC<BookingModalProps> = ({
           
           <div className="space-y-2">
             <Label htmlFor="walker-name">Your Name</Label>
-            <Input
-              id="walker-name"
-              placeholder="Enter your name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full"
-            />
+            {isLoadingWalkers ? (
+              <Input
+                id="walker-name"
+                placeholder="Loading walkers..."
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full"
+                disabled
+              />
+            ) : (
+              <div className="flex items-center gap-2">
+                <div className="flex-1">
+                  {manualNameEntry ? (
+                    <Input
+                      id="walker-name"
+                      placeholder="Enter your name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="w-full"
+                    />
+                  ) : (
+                    <Combobox
+                      options={walkers.map((walker: Walker) => ({
+                        value: walker.name,
+                        label: walker.name
+                      }))}
+                      value={name}
+                      onChange={(value) => {
+                        setName(value);
+                        // If walker has a phone number, auto-fill it
+                        const selectedWalker = walkers.find((w: Walker) => w.name === value);
+                        if (selectedWalker?.phone) {
+                          setPhone(selectedWalker.phone);
+                        }
+                      }}
+                      placeholder="Select or add name"
+                      emptyMessage="No walkers found"
+                      onAddNew={(value) => {
+                        setName(value);
+                        addNewWalker(value);
+                      }}
+                    />
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setManualNameEntry(!manualNameEntry)}
+                  type="button"
+                  className="px-3"
+                >
+                  {manualNameEntry ? "Select" : "Type"}
+                </Button>
+              </div>
+            )}
           </div>
           
           <div className="space-y-2">
