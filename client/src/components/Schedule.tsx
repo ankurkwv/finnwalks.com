@@ -12,9 +12,10 @@ import { useToast } from '@/hooks/use-toast';
 interface ScheduleProps {
   schedule: Record<string, WalkingSlot[]>;
   userName: string;
+  onUpdateUserName: (name: string) => void;
 }
 
-const Schedule: React.FC<ScheduleProps> = ({ schedule, userName }) => {
+const Schedule: React.FC<ScheduleProps> = ({ schedule, userName, onUpdateUserName }) => {
   const [bookingDate, setBookingDate] = useState<string>('');
   const [deleteSlot, setDeleteSlot] = useState<WalkingSlot | null>(null);
   const { toast } = useToast();
@@ -190,6 +191,7 @@ const Schedule: React.FC<ScheduleProps> = ({ schedule, userName }) => {
         date={bookingDate}
         bookedTimes={bookingDate ? (schedule[bookingDate] || []).map(s => s.time) : []}
         userName={userName}
+        onUpdateUserName={onUpdateUserName}
         isSubmitting={addSlotMutation.isPending}
       />
       

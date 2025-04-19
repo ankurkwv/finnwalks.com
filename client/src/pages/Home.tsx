@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import Schedule from '../components/Schedule';
-import NamePrompt from '../components/NamePrompt';
 import InfoModal from '../components/InfoModal';
 import { useSchedule } from '../hooks/useSchedule';
 import { useLocalStorage } from '../hooks/useLocalStorage';
@@ -10,9 +9,8 @@ import { formatDateShort } from '../lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
 const Home: React.FC = () => {
-  // User name from local storage
+  // User name from local storage - will be set/updated in the booking modal now
   const [userName, setUserName] = useLocalStorage<string>('userName', '');
-  const [showNamePrompt, setShowNamePrompt] = useState<boolean>(false);
   
   // Info modal state
   const [showInfoModal, setShowInfoModal] = useState<boolean>(false);
@@ -26,13 +24,6 @@ const Home: React.FC = () => {
   
   // Fetch schedule data with auto-refresh and unique query key per date
   const { data: schedule, isLoading, error } = useSchedule(startDateStr);
-  
-  // Check for user name on mount
-  useEffect(() => {
-    if (!userName) {
-      setShowNamePrompt(true);
-    }
-  }, [userName]);
   
   // Handle date navigation
   const goToPreviousWeek = () => {
@@ -49,12 +40,6 @@ const Home: React.FC = () => {
   
   const goToToday = () => {
     setCurrentStartDate(new Date());
-  };
-  
-  // Handle name saving
-  const saveName = (name: string) => {
-    setUserName(name);
-    setShowNamePrompt(false);
   };
   
   // Generate date range display text
@@ -99,7 +84,11 @@ const Home: React.FC = () => {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
           </div>
         ) : schedule ? (
-          <Schedule schedule={schedule} userName={userName} />
+          <Schedule 
+            schedule={schedule} 
+            userName={userName} 
+            onUpdateUserName={setUserName} 
+          />
         ) : (
           <div className="text-center py-12">
             <p className="text-gray-500">Unable to load schedule. Please try again.</p>
@@ -110,11 +99,6 @@ const Home: React.FC = () => {
       <Footer />
       
       {/* Modals */}
-      <NamePrompt 
-        isOpen={showNamePrompt} 
-        onSave={saveName} 
-      />
-      
       <InfoModal 
         isOpen={showInfoModal} 
         onClose={() => setShowInfoModal(false)} 
