@@ -1,5 +1,6 @@
 import { http, HttpResponse } from 'msw';
-import { WalkingSlot, Walker } from '../../shared/schema';
+import { Walker, WalkingSlot, InsertSlot } from '../../shared/schema';
+import { mockStorage } from './storage.mock';
 
 // Mock data for testing
 export const mockSchedule: Record<string, WalkingSlot[]> = {
@@ -31,129 +32,141 @@ export const mockLeaderboard = [
   { name: 'Bruno', totalWalks: 1, colorIndex: 1 }
 ];
 
-// Mock HTTP handlers
+// Define API endpoint handlers
 export const handlers = [
-  // Get schedule
-  http.get('/api/schedule', ({ request }) => {
+  // Get weekly schedule
+  http.get('/api/schedule', async ({ request }) => {
     const url = new URL(request.url);
     const startDate = url.searchParams.get('start') || '2025-04-20';
-    
-    return HttpResponse.json(mockSchedule);
+    const schedule = await mockStorage.getSchedule(startDate);
+    return HttpResponse.json(schedule, { status: 200 });
   }),
   
-  // Add a slot
+  // Add a new slot
   http.post('/api/slot', async ({ request }) => {
-    const data = await request.json() as {
-      date: string;
-      time: string;
-      name: string;
-      phone?: string;
-      notes?: string;
-    };
+    const slotData = await request.json() as InsertSlot;
     
-    // Check if the slot is already booked
-    const date = data.date;
-    const time = data.time;
-    
-    if (mockSchedule[date]?.some(slot => slot.time === time)) {
-      return new HttpResponse(
-        JSON.stringify({ error: 'Slot already booked' }),
+    // Validate required fields
+    if (!slotData.date || !slotData.time || !slotData.name) {
+      return HttpResponse.json(
+        { error: 'Missing required fields' },
         { status: 400 }
       );
     }
     
-    // Create a new slot
-    const newSlot: WalkingSlot = {
-      date,
-      time,
-      name: data.name,
-      phone: data.phone,
-      notes: data.notes || '',
-      timestamp: Date.now()
-    };
-    
-    // Add to mock schedule
-    if (!mockSchedule[date]) {
-      mockSchedule[date] = [];
+    const existingSlot = await mockStorage.getSlot(slotData.date, slotData.time);
+    if (existingSlot) {
+      return HttpResponse.json(
+        { error: 'Slot already booked' },
+        { status: 409 }
+      );
     }
-    mockSchedule[date].push(newSlot);
     
-    return HttpResponse.json(newSlot, { status: 201 });
+    try {
+      const newSlot = await mockStorage.addSlot(slotData);
+      return HttpResponse.json(newSlot, { status: 201 });
+    } catch (error) {
+      return HttpResponse.json(
+        { error: 'Failed to add slot' },
+        { status: 500 }
+      );
+    }
   }),
   
   // Delete a slot
   http.delete('/api/slot', async ({ request }) => {
-    const data = await request.json() as {
-      date: string;
-      time: string;
-      name: string;
-    };
+    const body = await request.json() as { date: string; time: string; name: string };
+    const { date, time, name } = body;
     
-    // Check if the slot exists
-    if (!mockSchedule[data.date] || !mockSchedule[data.date].some(slot => slot.time === data.time)) {
-      return new HttpResponse(
-        JSON.stringify({ error: 'Slot not found' }),
+    if (!date || !time || !name) {
+      return HttpResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+    
+    const existingSlot = await mockStorage.getSlot(date, time);
+    if (!existingSlot) {
+      return HttpResponse.json(
+        { error: 'Slot not found' },
         { status: 404 }
       );
     }
     
-    // Remove the slot
-    mockSchedule[data.date] = mockSchedule[data.date].filter(slot => slot.time !== data.time);
+    if (existingSlot.name !== name) {
+      return HttpResponse.json(
+        { error: 'Unauthorized to delete this slot' },
+        { status: 403 }
+      );
+    }
     
-    return HttpResponse.json({ success: true });
+    try {
+      const success = await mockStorage.removeSlot(date, time);
+      if (success) {
+        return HttpResponse.json({ success: true }, { status: 200 });
+      } else {
+        return HttpResponse.json(
+          { error: 'Failed to delete slot' },
+          { status: 500 }
+        );
+      }
+    } catch (error) {
+      return HttpResponse.json(
+        { error: 'Failed to delete slot' },
+        { status: 500 }
+      );
+    }
   }),
   
-  // Get walker color
-  http.get('/api/walker-color/:name', ({ params }) => {
+  // Get walker color index
+  http.get('/api/walker-color/:name', async ({ params }) => {
     const name = params.name as string;
-    const walker = mockWalkers.find(w => w.name === name);
-    const colorIndex = walker ? walker.colorIndex : Math.floor(Math.random() * 10);
-    
-    return HttpResponse.json({ colorIndex });
+    const colorIndex = await mockStorage.getWalkerColorIndex(name);
+    return HttpResponse.json({ colorIndex }, { status: 200 });
   }),
   
   // Search walkers
-  http.get('/api/walkers/search', ({ request }) => {
+  http.get('/api/walkers/search', async ({ request }) => {
     const url = new URL(request.url);
     const query = url.searchParams.get('q') || '';
-    
-    const filteredWalkers = mockWalkers.filter(
-      walker => walker.name.toLowerCase().includes(query.toLowerCase())
-    );
-    
-    return HttpResponse.json(filteredWalkers);
+    const walkers = await mockStorage.searchWalkers(query);
+    return HttpResponse.json(walkers, { status: 200 });
   }),
   
-  // Update walker
+  // Update walker info
   http.post('/api/walkers/update', async ({ request }) => {
-    const data = await request.json() as {
-      name: string;
-      phone?: string;
-    };
+    const body = await request.json() as { name: string; phone?: string };
+    const { name, phone } = body;
     
-    let walker = mockWalkers.find(w => w.name === data.name);
-    
-    if (!walker) {
-      walker = {
-        name: data.name,
-        colorIndex: mockWalkers.length % 10,
-        phone: data.phone
-      };
-      mockWalkers.push(walker);
-    } else if (data.phone) {
-      walker.phone = data.phone;
+    if (!name) {
+      return HttpResponse.json(
+        { error: 'Name is required' },
+        { status: 400 }
+      );
     }
     
-    return HttpResponse.json(walker);
+    try {
+      const walker = await mockStorage.updateWalker(name, phone);
+      return HttpResponse.json(walker, { status: 200 });
+    } catch (error) {
+      return HttpResponse.json(
+        { error: 'Failed to update walker' },
+        { status: 500 }
+      );
+    }
   }),
   
   // Get all-time leaderboard
-  http.get('/api/leaderboard/all-time', () => {
-    return HttpResponse.json(mockLeaderboard);
+  http.get('/api/leaderboard/all-time', async () => {
+    const leaderboard = await mockStorage.getLeaderboardAllTime();
+    return HttpResponse.json(leaderboard, { status: 200 });
   }),
   
-  // Get next-week leaderboard
-  http.get('/api/leaderboard/next-week', () => {
-    return HttpResponse.json(mockLeaderboard);
+  // Get next week leaderboard
+  http.get('/api/leaderboard/next-week', async ({ request }) => {
+    const url = new URL(request.url);
+    const startDate = url.searchParams.get('start') || '2025-04-20';
+    const leaderboard = await mockStorage.getLeaderboardNextWeek(startDate);
+    return HttpResponse.json(leaderboard, { status: 200 });
   })
 ];

@@ -1,20 +1,26 @@
-import { describe, test, expect } from 'vitest';
+import { describe, test, expect, beforeAll, afterAll } from 'vitest';
 import express from 'express';
-import { type Server } from 'http';
+import { Server } from 'http';
 import request from 'supertest';
 import { registerRoutes } from '../server/routes';
+import { mockStorage, resetMockStorage } from './mocks/storage.mock';
 
-// Mock Twilio service to avoid sending real SMS in tests
+// Mock dependencies
+vi.mock('../server/storage', () => ({
+  storage: mockStorage
+}));
+
 vi.mock('../server/twilio', () => ({
   sendSmsNotification: vi.fn().mockResolvedValue(true)
 }));
 
-describe('Performance Tests', () => {
+describe('API Performance Tests', () => {
   let app: express.Express;
   let server: Server;
   
   // Set up test server before all tests
   beforeAll(async () => {
+    resetMockStorage();
     app = express();
     app.use(express.json());
     server = await registerRoutes(app);
@@ -25,113 +31,137 @@ describe('Performance Tests', () => {
     server.close();
   });
   
-  test('handles concurrent schedule requests (10 concurrent requests)', async () => {
-    const concurrentRequests = 10;
+  test('can handle 50 simultaneous schedule requests', async () => {
+    const NUM_REQUESTS = 50;
     const startTime = Date.now();
     
-    // Create an array of concurrent requests
-    const requests = Array(concurrentRequests).fill(0).map(() => 
-      request(app).get('/api/schedule').query({ start: '2025-04-20' })
+    // Create array of promises for concurrent requests
+    const requests = Array(NUM_REQUESTS).fill(null).map(() => 
+      request(app)
+        .get('/api/schedule')
+        .query({ start: '2025-04-20' })
     );
     
     // Execute all requests concurrently
-    const results = await Promise.all(requests);
+    const responses = await Promise.all(requests);
     
-    // All requests should succeed
-    for (const response of results) {
+    // Verify all responses are successful
+    for (const response of responses) {
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty('2025-04-20');
     }
     
-    // Total time should be reasonable
-    const totalTime = Date.now() - startTime;
-    console.log(`10 concurrent requests took ${totalTime}ms`);
+    const endTime = Date.now();
+    const totalTime = endTime - startTime;
+    
+    console.log(`Processed ${NUM_REQUESTS} concurrent requests in ${totalTime}ms`);
+    console.log(`Average response time: ${totalTime / NUM_REQUESTS}ms`);
+    
+    // Basic expectation for reasonability
+    expect(totalTime).toBeLessThan(5000); // Should handle 50 requests in under 5 seconds
   });
   
-  test('handles rapid booking and cancellation', async () => {
-    // Book 5 slots in rapid succession
-    const bookRequests = Array(5).fill(0).map((_, index) => {
-      return request(app)
+  test('can handle rapid slot bookings and cancellations', async () => {
+    const NUM_OPERATIONS = 20;
+    const startTime = Date.now();
+    
+    // Book slots
+    for (let i = 0; i < NUM_OPERATIONS; i++) {
+      const hour = String(10 + Math.floor(i / 2)).padStart(2, '0');
+      const minutes = (i % 2) * 30;
+      const minutesStr = String(minutes).padStart(2, '0');
+      
+      const newSlot = {
+        date: '2025-04-21',
+        time: `${hour}${minutesStr}`,
+        name: `PerformanceUser${i}`,
+        phone: '+10000000000',
+        notes: 'Performance test'
+      };
+      
+      const response = await request(app)
         .post('/api/slot')
-        .send({
-          date: '2025-04-30',
-          time: `${10 + index}00`,  // 1000, 1100, 1200, 1300, 1400
-          name: `PerformanceTest${index}`,
-          notes: 'Performance test'
-        });
-    });
-    
-    const bookResults = await Promise.all(bookRequests);
-    
-    // All should succeed
-    for (const response of bookResults) {
+        .send(newSlot);
+      
       expect(response.status).toBe(201);
     }
     
-    // Get the schedule to verify all slots were booked
+    // Get the schedule to verify bookings
     const scheduleResponse = await request(app)
       .get('/api/schedule')
-      .query({ start: '2025-04-30' });
+      .query({ start: '2025-04-21' });
     
     expect(scheduleResponse.status).toBe(200);
-    expect(scheduleResponse.body['2025-04-30'].length).toBeGreaterThanOrEqual(5);
+    expect(scheduleResponse.body['2025-04-21'].length).toBe(NUM_OPERATIONS);
     
-    // Now cancel all slots
-    const cancelRequests = Array(5).fill(0).map((_, index) => {
-      return request(app)
+    // Cancel half of the bookings
+    for (let i = 0; i < NUM_OPERATIONS / 2; i++) {
+      const hour = String(10 + Math.floor(i / 2)).padStart(2, '0');
+      const minutes = (i % 2) * 30;
+      const minutesStr = String(minutes).padStart(2, '0');
+      
+      const deleteResponse = await request(app)
         .delete('/api/slot')
         .send({
-          date: '2025-04-30',
-          time: `${10 + index}00`,
-          name: `PerformanceTest${index}`
+          date: '2025-04-21',
+          time: `${hour}${minutesStr}`,
+          name: `PerformanceUser${i}`
         });
-    });
-    
-    const cancelResults = await Promise.all(cancelRequests);
-    
-    // All cancellations should succeed
-    for (const response of cancelResults) {
-      expect(response.status).toBe(200);
+      
+      expect(deleteResponse.status).toBe(200);
     }
+    
+    // Get the schedule after cancellations
+    const finalScheduleResponse = await request(app)
+      .get('/api/schedule')
+      .query({ start: '2025-04-21' });
+    
+    expect(finalScheduleResponse.status).toBe(200);
+    expect(finalScheduleResponse.body['2025-04-21'].length).toBe(NUM_OPERATIONS / 2);
+    
+    const endTime = Date.now();
+    const totalTime = endTime - startTime;
+    
+    console.log(`Processed ${NUM_OPERATIONS * 1.5} operations in ${totalTime}ms`);
+    console.log(`Average operation time: ${totalTime / (NUM_OPERATIONS * 1.5)}ms`);
+    
+    // Basic expectation for reasonability
+    expect(totalTime).toBeLessThan(10000); // Should handle operations in under 10 seconds
   });
   
-  test('handles load on walker search and color endpoints', async () => {
-    // First add some walkers by booking slots
-    for (let i = 0; i < 10; i++) {
-      await request(app)
-        .post('/api/slot')
-        .send({
-          date: '2025-05-01',
-          time: `${10 + i}00`,
-          name: `LoadTestWalker${i}`,
-          notes: 'Load test'
-        });
-    }
-    
-    // Now search for these walkers with concurrent requests
+  test('can handle concurrent walker searches', async () => {
+    const NUM_SEARCHES = 30;
     const startTime = Date.now();
     
-    const searchRequests = Array(20).fill(0).map((_, index) => 
-      request(app)
-        .get('/api/walkers/search')
-        .query({ q: 'LoadTestWalker' + (index % 10) })
-    );
-    
-    const colorRequests = Array(20).fill(0).map((_, index) => 
-      request(app)
-        .get(`/api/walker-color/LoadTestWalker${index % 10}`)
-    );
-    
-    // Execute all requests concurrently
-    const results = await Promise.all([...searchRequests, ...colorRequests]);
-    
-    // All requests should succeed
-    for (const response of results) {
-      expect(response.status).toBe(200);
+    // Create walkers for searching
+    for (let i = 0; i < 5; i++) {
+      await mockStorage.updateWalker(`PerformanceWalker${i}`, `+1000000000${i}`);
     }
     
-    // Total time should be reasonable
-    const totalTime = Date.now() - startTime;
-    console.log(`40 concurrent walker requests took ${totalTime}ms`);
+    // Create array of promises for concurrent searches
+    const searches = Array(NUM_SEARCHES).fill(null).map((_, i) => 
+      request(app)
+        .get('/api/walkers/search')
+        .query({ q: 'Performance' })
+    );
+    
+    // Execute all searches concurrently
+    const responses = await Promise.all(searches);
+    
+    // Verify all responses are successful
+    for (const response of responses) {
+      expect(response.status).toBe(200);
+      expect(Array.isArray(response.body)).toBe(true);
+      expect(response.body.length).toBeGreaterThanOrEqual(5); // At least the 5 we created
+    }
+    
+    const endTime = Date.now();
+    const totalTime = endTime - startTime;
+    
+    console.log(`Processed ${NUM_SEARCHES} concurrent searches in ${totalTime}ms`);
+    console.log(`Average search time: ${totalTime / NUM_SEARCHES}ms`);
+    
+    // Basic expectation for reasonability
+    expect(totalTime).toBeLessThan(5000); // Should handle searches in under 5 seconds
   });
 });

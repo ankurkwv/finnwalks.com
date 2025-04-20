@@ -1,28 +1,28 @@
+/// <reference types="vitest" />
+
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
-import path from 'path';
+import { resolve } from 'path';
 
 export default defineConfig({
   plugins: [react()],
   test: {
-    environment: 'happy-dom',
     globals: true,
+    environment: 'happy-dom',
     setupFiles: ['./tests/setup.ts'],
-    includeSource: ['client/src/**/*.{ts,tsx}', 'server/**/*.ts'],
-    exclude: ['**/node_modules/**', '**/dist/**'],
+    include: ['./tests/**/*.{test,spec}.{ts,tsx}'],
     coverage: {
       reporter: ['text', 'json', 'html'],
+      exclude: ['node_modules/', 'tests/setup.ts'],
     },
-    testTimeout: 10000, // Increase timeout for tests
-    hookTimeout: 10000, // Increase timeout for hooks
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './client/src'),
-      '@shared': path.resolve(__dirname, './shared'),
-      '@server': path.resolve(__dirname, './server'),
-      '@tests': path.resolve(__dirname, './tests'),
-      '@assets': path.resolve(__dirname, './client/src/assets'),
+      '@': resolve(__dirname, './client/src'),
+      '@server': resolve(__dirname, './server'),
+      '@shared': resolve(__dirname, './shared'),
+      '@assets': resolve(__dirname, './attached_assets'),
+      '@tests': resolve(__dirname, './tests'),
     },
-  }
+  },
 });

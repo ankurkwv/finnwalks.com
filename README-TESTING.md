@@ -1,131 +1,136 @@
-# FinnWalks - Automated Integration Testing Strategy
+# FinnWalks Testing Guide
 
-## Overview
-
-This document outlines the automated integration testing strategy for the FinnWalks dog-walking scheduler application. The testing framework is designed to provide comprehensive coverage of all major features and flows in the application.
-
-## Testing Framework & Tools
-
-- **Testing Framework**: Vitest
-- **Browser Emulation**: Happy DOM
-- **Testing Libraries**:
-  - @testing-library/react - For rendering and testing React components
-  - @testing-library/user-event - For simulating user interactions
-  - MSW (Mock Service Worker) - For mocking API requests
+This document provides information about the test suite for the FinnWalks application, including how to run tests and an explanation of the testing approach.
 
 ## Test Structure
 
-The tests are organized into several categories:
+The test suite is organized by test type:
 
-### 1. Component Tests
-Tests that verify individual components render correctly and respond to user interactions:
+1. **Unit Tests**
+   - Test isolated components or functions
+   - Located in `tests/*.test.tsx` files
+   - Focus on individual UI components and utility functions
 
-- `Home.test.tsx` - Tests for the main application page
-- `Schedule.test.tsx` - Tests for schedule display and interaction
-- `BookingModal.test.tsx` - Tests for booking form functionality
-- `Leaderboard.test.tsx` - Tests for leaderboard display
+2. **Integration Tests**
+   - Test interactions between components and modules
+   - Located in `tests/api-routes.test.ts`
+   - Focus on API endpoints and database operations
 
-### 2. API Tests
-Tests that verify the API endpoints work correctly:
+3. **End-to-End Tests**
+   - Test complete user journeys
+   - Located in `tests/e2e.test.tsx`
+   - Simulate user interactions with the application
 
-- `api.test.ts` - Tests for all backend API routes
-
-### 3. End-to-End Tests
-Tests that verify complete user flows:
-
-- `e2e.test.tsx` - Tests for the complete booking and cancellation flow
-
-### 4. Performance Tests
-Tests that verify the application can handle load:
-
-- `performance.test.ts` - Tests concurrent API requests and rapid booking/cancellation
+4. **Performance Tests**
+   - Test application performance under load
+   - Located in `tests/performance.test.ts`
+   - Measure response times and throughput
 
 ## Running Tests
 
 To run all tests:
+
 ```bash
-npx vitest run
+npm test
 ```
 
 To run a specific test file:
+
 ```bash
-npx vitest run tests/Home.test.tsx
+npx vitest run tests/storage.test.ts
 ```
 
-To run tests in watch mode:
+To run tests in watch mode (for development):
+
 ```bash
-npx vitest
+npx vitest tests/storage.test.ts
 ```
 
-## Test Coverage Matrix
+## Testing Technologies
 
-### Core Features Tested
-
-| Feature | Component Tests | API Tests | E2E Tests | Performance Tests |
-|---------|----------------|-----------|-----------|-------------------|
-| View Schedule | ✓ | ✓ | ✓ | ✓ |
-| Book Walk | ✓ | ✓ | ✓ | ✓ |
-| Cancel Walk | ✓ | ✓ | ✓ | ✓ |
-| View Leaderboard | ✓ | ✓ | - | - |
-| Week Navigation | ✓ | - | ✓ | - |
-| Walker Search | ✓ | ✓ | - | ✓ |
-| Mobile View | ✓ | - | - | - |
-
-### Tested Scenarios
-
-1. **Schedule Viewing**
-   - View schedule for current week
-   - Navigate between weeks
-   - View details of scheduled walks
-
-2. **Booking Process**
-   - Open booking modal
-   - Enter walker information
-   - Select available time slot
-   - Submit booking form
-   - View confirmation
-   - Handle validation errors
-
-3. **Cancellation Process**
-   - Open cancellation modal
-   - Confirm cancellation
-   - Handle errors
-
-4. **Leaderboard**
-   - View all-time leaderboard
-   - View next-week leaderboard
-   - Switch between leaderboard views
-
-5. **Error Handling**
-   - Server errors
-   - Validation errors
-   - Network failures
-
-6. **Performance**
-   - Concurrent API requests
-   - Rapid booking and cancellation
-   - Handling multiple users
+- **Vitest**: Test runner and framework
+- **Happy DOM**: Browser environment emulation
+- **MSW (Mock Service Worker)**: API mocking
+- **Testing Library**: DOM testing utilities
+- **TanStack Query**: Data fetching testing
 
 ## Mocking Strategy
 
-We use MSW (Mock Service Worker) to intercept network requests and provide mock responses. This approach allows us to:
+The application uses a comprehensive mocking strategy:
 
-1. Test components in isolation without a running server
-2. Simulate various server responses including errors
-3. Create deterministic test scenarios
+1. **API Mocks**: MSW intercepts HTTP requests and returns mock responses
+2. **Storage Mocks**: In-memory implementation of the storage interface
+3. **DB Mocks**: Mock database connection and query methods
 
-Mock data is defined in `tests/mocks/handlers.ts`.
+## Test Coverage
 
-## Test Utilities
+The test suite covers:
 
-Common testing utilities are available in `tests/utils.tsx` which provides:
+- **UI Components**: Rendering and interaction
+- **API Endpoints**: Request/response handling
+- **Data Fetching**: TanStack Query integration
+- **Form Handling**: Input validation and submission
+- **State Management**: Local state and context
+- **Performance**: Load testing and response times
 
-1. Custom render function with providers (React Query, Router)
-2. Helper functions for common testing tasks
+## Adding New Tests
 
-## Future Test Enhancements
+When adding new tests, follow these guidelines:
 
-1. Expand coverage for edge cases
-2. Add visual regression tests
-3. Add load testing for high-volume scenarios
-4. Add accessibility testing
+1. **Choose the right test type**: Unit, integration, or E2E
+2. **Use the existing mocks**: Extend them if needed
+3. **Follow the naming convention**: `*.test.tsx` or `*.test.ts`
+4. **Maintain isolation**: Tests should not depend on each other
+5. **Clean up resources**: Reset mocks and clear state between tests
+
+## Example Tests
+
+### Component Test Example
+
+```typescript
+test('renders dog walking slot correctly', () => {
+  const slot = {
+    date: '2025-04-20',
+    time: '1400',
+    name: 'John Doe',
+    notes: 'Bring treats'
+  };
+  
+  render(<WalkingSlot slot={slot} />);
+  
+  expect(screen.getByText('John Doe')).toBeInTheDocument();
+  expect(screen.getByText('2:00 PM')).toBeInTheDocument();
+  expect(screen.getByText('Bring treats')).toBeInTheDocument();
+});
+```
+
+### API Test Example
+
+```typescript
+test('GET /api/schedule returns weekly schedule', async () => {
+  const response = await request(app)
+    .get('/api/schedule')
+    .query({ start: '2025-04-20' });
+  
+  expect(response.status).toBe(200);
+  expect(response.body).toHaveProperty('2025-04-20');
+  expect(Array.isArray(response.body['2025-04-20'])).toBe(true);
+});
+```
+
+### Performance Test Example
+
+```typescript
+test('can handle 50 simultaneous schedule requests', async () => {
+  const NUM_REQUESTS = 50;
+  const requests = Array(NUM_REQUESTS).fill(null).map(() => 
+    request(app).get('/api/schedule').query({ start: '2025-04-20' })
+  );
+  
+  const responses = await Promise.all(requests);
+  
+  for (const response of responses) {
+    expect(response.status).toBe(200);
+  }
+});
+```
