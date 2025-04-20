@@ -1,37 +1,45 @@
-# FinnWalks Testing Guide
+# FinnWalks Testing Documentation
 
-This document provides information about the test suite for the FinnWalks application, including how to run tests and an explanation of the testing approach.
+This document outlines the testing approach for the FinnWalks application, which is a dog walking scheduling service.
 
-## Test Structure
+## Testing Framework
 
-The test suite is organized by test type:
+The FinnWalks application uses the following testing stack:
 
-1. **Unit Tests**
-   - Test isolated components or functions
-   - Located in `tests/*.test.tsx` files
-   - Focus on individual UI components and utility functions
+- **Vitest**: The core testing framework, compatible with Jest APIs
+- **Happy DOM**: Browser environment emulation for testing React components
+- **Testing Library**: For testing React components in a user-centric way
+- **MSW (Mock Service Worker)**: For mocking API requests during tests
+- **Supertest**: For HTTP API endpoint testing
 
-2. **Integration Tests**
-   - Test interactions between components and modules
-   - Located in `tests/api-routes.test.ts`
-   - Focus on API endpoints and database operations
+## Test Types
 
-3. **End-to-End Tests**
-   - Test complete user journeys
-   - Located in `tests/e2e.test.tsx`
-   - Simulate user interactions with the application
+### 1. Unit Tests
 
-4. **Performance Tests**
-   - Test application performance under load
-   - Located in `tests/performance.test.ts`
-   - Measure response times and throughput
+Unit tests focus on testing individual components and functions in isolation. These tests verify that each small piece of code behaves as expected.
+
+### 2. API Tests
+
+API tests validate that the server endpoints function correctly, returning proper responses for different input scenarios. These tests ensure that data flows correctly between the client and server.
+
+### 3. Storage Tests
+
+Storage tests verify that the data layer behaves correctly, properly storing and retrieving data according to the application's requirements.
+
+### 4. End-to-End Tests
+
+End-to-end tests simulate real user behavior, testing complete workflows from the user's perspective. These tests validate that all components work together as expected.
+
+### 5. Performance Tests
+
+Performance tests measure the application's behavior under load, ensuring it can handle multiple concurrent requests efficiently.
 
 ## Running Tests
 
 To run all tests:
 
 ```bash
-npm test
+npx vitest run
 ```
 
 To run a specific test file:
@@ -40,97 +48,75 @@ To run a specific test file:
 npx vitest run tests/storage.test.ts
 ```
 
-To run tests in watch mode (for development):
+To run tests in watch mode:
 
 ```bash
-npx vitest tests/storage.test.ts
+npx vitest
 ```
 
-## Testing Technologies
+## Test Files
 
-- **Vitest**: Test runner and framework
-- **Happy DOM**: Browser environment emulation
-- **MSW (Mock Service Worker)**: API mocking
-- **Testing Library**: DOM testing utilities
-- **TanStack Query**: Data fetching testing
+### Storage Tests (`tests/storage.test.ts`)
 
-## Mocking Strategy
+Tests for the storage layer, validating that data operations work correctly:
+- Retrieval of weekly schedules
+- Creation of walking slots
+- Deletion of walking slots
+- Walker color index consistency
+- Walker search functionality
+- Walker information updates
+- Leaderboard generation
 
-The application uses a comprehensive mocking strategy:
+### API Routes Tests (`tests/api-routes.test.ts`)
 
-1. **API Mocks**: MSW intercepts HTTP requests and returns mock responses
-2. **Storage Mocks**: In-memory implementation of the storage interface
-3. **DB Mocks**: Mock database connection and query methods
+Tests for the server API endpoints:
+- Schedule retrieval
+- Slot booking
+- Slot cancellation
+- Walker color retrieval
+- Walker search functionality
+- Walker information updates
+- Leaderboard retrieval
 
-## Test Coverage
+### End-to-End Tests (`tests/e2e.test.tsx`)
 
-The test suite covers:
+Simulates user interactions to test complete features:
+- Initial page layout rendering
+- Week navigation
+- Slot booking process
+- Error handling for already booked slots
+- Booking cancellation
+- User authorization for cancellations
+- Leaderboard functionality
+- Walker name autocomplete
+- User information persistence
 
-- **UI Components**: Rendering and interaction
-- **API Endpoints**: Request/response handling
-- **Data Fetching**: TanStack Query integration
-- **Form Handling**: Input validation and submission
-- **State Management**: Local state and context
-- **Performance**: Load testing and response times
+### Performance Tests (`tests/performance.test.ts`)
 
-## Adding New Tests
+Tests application performance under load:
+- Multiple simultaneous GET requests
+- Multiple simultaneous POST requests
+- Concurrent leaderboard retrieval
 
-When adding new tests, follow these guidelines:
+## Mock Implementation
 
-1. **Choose the right test type**: Unit, integration, or E2E
-2. **Use the existing mocks**: Extend them if needed
-3. **Follow the naming convention**: `*.test.tsx` or `*.test.ts`
-4. **Maintain isolation**: Tests should not depend on each other
-5. **Clean up resources**: Reset mocks and clear state between tests
+The tests use mockStorage (in `tests/mocks/storage.mock.ts`) to simulate the storage layer without requiring a real database. This enables fast, reliable testing.
 
-## Example Tests
+Key mock components:
+- `mockStorage`: Implements the `IStorage` interface for testing
+- `resetMockStorage()`: Clears mock data between tests
+- Mock Service Worker to intercept and simulate API requests
 
-### Component Test Example
+## Best Practices
 
-```typescript
-test('renders dog walking slot correctly', () => {
-  const slot = {
-    date: '2025-04-20',
-    time: '1400',
-    name: 'John Doe',
-    notes: 'Bring treats'
-  };
-  
-  render(<WalkingSlot slot={slot} />);
-  
-  expect(screen.getByText('John Doe')).toBeInTheDocument();
-  expect(screen.getByText('2:00 PM')).toBeInTheDocument();
-  expect(screen.getByText('Bring treats')).toBeInTheDocument();
-});
-```
+1. **Test Reset**: Each test resets the state to ensure isolation.
+2. **Async Testing**: All API and storage operations are properly tested with async/await.
+3. **User-Centric Testing**: End-to-end tests focus on user actions rather than implementation details.
+4. **Performance Benchmarks**: Performance tests include specific thresholds for response times.
+5. **Error Cases**: Tests include validation of error cases and edge conditions.
 
-### API Test Example
+## Testing Caveats
 
-```typescript
-test('GET /api/schedule returns weekly schedule', async () => {
-  const response = await request(app)
-    .get('/api/schedule')
-    .query({ start: '2025-04-20' });
-  
-  expect(response.status).toBe(200);
-  expect(response.body).toHaveProperty('2025-04-20');
-  expect(Array.isArray(response.body['2025-04-20'])).toBe(true);
-});
-```
-
-### Performance Test Example
-
-```typescript
-test('can handle 50 simultaneous schedule requests', async () => {
-  const NUM_REQUESTS = 50;
-  const requests = Array(NUM_REQUESTS).fill(null).map(() => 
-    request(app).get('/api/schedule').query({ start: '2025-04-20' })
-  );
-  
-  const responses = await Promise.all(requests);
-  
-  for (const response of responses) {
-    expect(response.status).toBe(200);
-  }
-});
-```
+- The tests use a fixed date (April 20, 2025) to ensure consistency.
+- Local storage operations are mocked in the testing environment.
+- Some API endpoints rely on environment variables like Twilio credentials, which are mocked during testing.

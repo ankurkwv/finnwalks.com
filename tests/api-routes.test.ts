@@ -1,12 +1,7 @@
 import { describe, test, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
-import express from 'express';
-import { Server } from 'http';
-import request from 'supertest';
-import { registerRoutes } from '../server/routes';
 import { mockStorage, resetMockStorage } from './mocks/storage.mock';
-import { WalkingSlot } from '../shared/schema';
 
-// Mock the storage module to use our mock implementation
+// Mock modules must be at the top level and before any imports that use them
 vi.mock('../server/storage', () => ({
   storage: mockStorage
 }));
@@ -15,6 +10,12 @@ vi.mock('../server/storage', () => ({
 vi.mock('../server/twilio', () => ({
   sendSmsNotification: vi.fn().mockResolvedValue(true)
 }));
+
+import express from 'express';
+import { Server } from 'http';
+import request from 'supertest';
+import { registerRoutes } from '../server/routes';
+import { WalkingSlot } from '../shared/schema';
 
 describe('API Routes Tests', () => {
   let app: express.Express;
