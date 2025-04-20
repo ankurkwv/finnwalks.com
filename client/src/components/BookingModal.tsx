@@ -54,10 +54,30 @@ const BookingModal: React.FC<BookingModalProps> = ({
   const [name, setName] = useState<string>(userName);
   const [phone, setPhone] = useState<string>(userPhone || "");
   const [isUpdatingWalker, setIsUpdatingWalker] = useState<boolean>(false);
+  const [allWalkers, setAllWalkers] = useState<Walker[]>([]);
+  const [isLoadingWalkers, setIsLoadingWalkers] = useState<boolean>(false);
   const { toast } = useToast();
 
   // Available times for this day
   const availableTimes = getAvailableTimes(bookedTimes);
+  
+  // Pre-fetch all walkers when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setIsLoadingWalkers(true);
+      fetch('/api/walkers/search')
+        .then(res => res.json())
+        .then(walkers => {
+          setAllWalkers(walkers || []);
+        })
+        .catch(err => {
+          console.error('Error pre-fetching walkers:', err);
+        })
+        .finally(() => {
+          setIsLoadingWalkers(false);
+        });
+    }
+  }, [isOpen]);
 
   // Reset form and initialize name and phone when modal opens
   useEffect(() => {
@@ -191,6 +211,8 @@ const BookingModal: React.FC<BookingModalProps> = ({
               onWalkerSelect={handleWalkerSelect}
               placeholder="Start typing your name..."
               className="w-full"
+              walkers={allWalkers}
+              isLoading={isLoadingWalkers}
             />
           </div>
 

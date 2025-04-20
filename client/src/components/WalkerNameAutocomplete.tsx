@@ -8,6 +8,8 @@ interface WalkerNameAutocompleteProps {
   onWalkerSelect: (walker: Walker) => void;
   placeholder?: string;
   className?: string;
+  walkers?: Walker[]; // Pre-fetched walkers
+  isLoading?: boolean; // Loading state
 }
 
 const WalkerNameAutocomplete: React.FC<WalkerNameAutocompleteProps> = ({
@@ -16,37 +18,27 @@ const WalkerNameAutocomplete: React.FC<WalkerNameAutocompleteProps> = ({
   onWalkerSelect,
   placeholder = 'Enter your name',
   className = '',
+  walkers = [],
+  isLoading = false,
 }) => {
   const [searchResults, setSearchResults] = useState<Walker[]>([]);
   const [isOpen, setIsOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [debouncedSearch, setDebouncedSearch] = useState(value);
-  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const autocompleteRef = useRef<HTMLDivElement>(null);
 
-  // Search for walkers when input value changes
+  // Filter walkers client-side based on input value
   useEffect(() => {
-    const fetchWalkers = async () => {
-      if (!debouncedSearch || debouncedSearch.length < 1) {
-        setSearchResults([]);
-        return;
-      }
+    if (!value || value.length < 1) {
+      setSearchResults([]);
+      return;
+    }
 
-      try {
-        setLoading(true);
-        const response = await fetch(`/api/walkers/search?q=${encodeURIComponent(debouncedSearch)}`);
-        const walkers = await response.json();
-        setSearchResults(walkers || []);
-      } catch (error) {
-        console.error('Error searching walkers:', error);
-        setSearchResults([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchWalkers();
-  }, [debouncedSearch]);
+    const lowerCaseValue = value.toLowerCase();
+    const filteredWalkers = walkers.filter(walker => 
+      walker.name.toLowerCase().includes(lowerCaseValue)
+    );
+    
+    setSearchResults(filteredWalkers);
+  }, [value, walkers]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -64,26 +56,6 @@ const WalkerNameAutocomplete: React.FC<WalkerNameAutocompleteProps> = ({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
-
-  // Effect for debouncing input value
-  useEffect(() => {
-    // Clear any existing timeout
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-    
-    // Set a new timeout for debounce
-    searchTimeoutRef.current = setTimeout(() => {
-      setDebouncedSearch(value);
-    }, 300); // 300ms debounce delay
-    
-    // Cleanup on unmount or when value changes
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-    };
-  }, [value]);
 
   // Handle input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -127,7 +99,7 @@ const WalkerNameAutocomplete: React.FC<WalkerNameAutocompleteProps> = ({
       )}
 
       {/* Loading indicator */}
-      {loading && (
+      {isLoading && (
         <div className="absolute right-3 top-3">
           <div className="w-4 h-4 border-2 border-gray-300 border-t-primary rounded-full animate-spin"></div>
         </div>
