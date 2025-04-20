@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAllTimeLeaderboard, useNextWeekLeaderboard, LeaderboardEntry } from '../hooks/useLeaderboard';
@@ -18,6 +18,49 @@ interface WalkerStyle {
 
 const Leaderboard: React.FC<LeaderboardProps> = ({ currentDate }) => {
   const [activeTab, setActiveTab] = useState<string>('all-time');
+  const [isHighlighted, setIsHighlighted] = useState(false);
+  
+  // Add scroll effect detection
+  useEffect(() => {
+    // Function to handle if this element is the target of a scroll event
+    const handleIntersection = (entries: IntersectionObserverEntry[]) => {
+      entries.forEach(entry => {
+        // If the element is scrolled to via the leaderboard button
+        if (entry.isIntersecting && document.location.hash === '#leaderboard') {
+          // Trigger the highlight animation
+          setIsHighlighted(true);
+          
+          // Remove the hash after animation is triggered
+          setTimeout(() => {
+            history.replaceState(null, '', window.location.pathname + window.location.search);
+          }, 100);
+          
+          // Reset the highlight state after animation completes
+          setTimeout(() => {
+            setIsHighlighted(false);
+          }, 1500);
+        }
+      });
+    };
+    
+    // Set up the intersection observer
+    const observer = new IntersectionObserver(handleIntersection, {
+      threshold: 0.5,
+    });
+    
+    // Get the leaderboard element
+    const leaderboardElement = document.querySelector('.leaderboard-section');
+    if (leaderboardElement) {
+      observer.observe(leaderboardElement);
+    }
+    
+    // Cleanup function
+    return () => {
+      if (leaderboardElement) {
+        observer.unobserve(leaderboardElement);
+      }
+    };
+  }, []);
   
   // Fetch leaderboard data using React Query
   const { 
@@ -88,7 +131,11 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ currentDate }) => {
   };
   
   return (
-    <Card className="shadow-md border-t-4 border-finn-primary leaderboard-section">
+    <Card 
+      className={`shadow-md border-t-4 border-finn-primary leaderboard-section transition-all duration-500 ${
+        isHighlighted ? 'scale-[1.02] shadow-lg ring-4 ring-finn-primary ring-opacity-50' : ''
+      }`}
+      id="leaderboard"
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-finn-primary">
           <TrophyIcon className="h-5 w-5" />
