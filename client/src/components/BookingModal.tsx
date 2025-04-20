@@ -85,6 +85,19 @@ const BookingModal: React.FC<BookingModalProps> = ({
     }
   };
 
+  // Handle time selection and auto-focus notes
+  const handleTimeSelection = (value: string) => {
+    setSelectedTime(value);
+    
+    // Auto-focus on notes field after time selection
+    setTimeout(() => {
+      const notesField = document.getElementById('notes');
+      if (notesField) {
+        notesField.focus();
+      }
+    }, 100); // Small delay to ensure UI has updated
+  };
+
   // Update walker info in database
   const updateWalkerInfo = async () => {
     if (!name.trim()) return;
@@ -198,7 +211,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
           <div className="space-y-2">
             <Label htmlFor="time">Select Time</Label>
-            <Select value={selectedTime} onValueChange={setSelectedTime}>
+            <Select value={selectedTime} onValueChange={handleTimeSelection}>
               <SelectTrigger id="time">
                 <SelectValue placeholder="Select a time" />
               </SelectTrigger>
