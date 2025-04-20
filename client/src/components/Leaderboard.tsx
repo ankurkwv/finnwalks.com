@@ -1,10 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAllTimeLeaderboard, useNextWeekLeaderboard, LeaderboardEntry } from '../hooks/useLeaderboard';
-import { Badge } from '@/components/ui/badge';
-import { TrophyIcon, CalendarIcon, PawPrintIcon } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
+import React, { useState, useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  useAllTimeLeaderboard,
+  useNextWeekLeaderboard,
+  LeaderboardEntry,
+} from "../hooks/useLeaderboard";
+import { Badge } from "@/components/ui/badge";
+import { TrophyIcon, CalendarIcon, PawPrintIcon } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface LeaderboardProps {
   currentDate: string;
@@ -17,24 +27,28 @@ interface WalkerStyle {
 }
 
 const Leaderboard: React.FC<LeaderboardProps> = ({ currentDate }) => {
-  const [activeTab, setActiveTab] = useState<string>('all-time');
+  const [activeTab, setActiveTab] = useState<string>("all-time");
   const [isHighlighted, setIsHighlighted] = useState(false);
-  
+
   // Add scroll effect detection
   useEffect(() => {
     // Function to handle if this element is the target of a scroll event
     const handleIntersection = (entries: IntersectionObserverEntry[]) => {
-      entries.forEach(entry => {
+      entries.forEach((entry) => {
         // If the element is scrolled to via the leaderboard button
-        if (entry.isIntersecting && document.location.hash === '#leaderboard') {
+        if (entry.isIntersecting && document.location.hash === "#leaderboard") {
           // Trigger the highlight animation
           setIsHighlighted(true);
-          
+
           // Remove the hash after animation is triggered
           setTimeout(() => {
-            history.replaceState(null, '', window.location.pathname + window.location.search);
+            history.replaceState(
+              null,
+              "",
+              window.location.pathname + window.location.search,
+            );
           }, 100);
-          
+
           // Reset the highlight state after animation completes
           setTimeout(() => {
             setIsHighlighted(false);
@@ -42,18 +56,18 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ currentDate }) => {
         }
       });
     };
-    
+
     // Set up the intersection observer
     const observer = new IntersectionObserver(handleIntersection, {
       threshold: 0.5,
     });
-    
+
     // Get the leaderboard element
-    const leaderboardElement = document.querySelector('.leaderboard-section');
+    const leaderboardElement = document.querySelector(".leaderboard-section");
     if (leaderboardElement) {
       observer.observe(leaderboardElement);
     }
-    
+
     // Cleanup function
     return () => {
       if (leaderboardElement) {
@@ -61,81 +75,79 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ currentDate }) => {
       }
     };
   }, []);
-  
+
   // Fetch leaderboard data using React Query
-  const { 
-    data: allTimeData, 
-    isLoading: isLoadingAllTime 
-  } = useAllTimeLeaderboard();
-  
-  const { 
-    data: nextWeekData, 
-    isLoading: isLoadingNextWeek 
-  } = useNextWeekLeaderboard(currentDate);
-  
+  const { data: allTimeData, isLoading: isLoadingAllTime } =
+    useAllTimeLeaderboard();
+
+  const { data: nextWeekData, isLoading: isLoadingNextWeek } =
+    useNextWeekLeaderboard(currentDate);
+
   const handleTabChange = (value: string) => {
     setActiveTab(value);
   };
-  
+
   // Style function to get the appropriate walker color
   const getWalkerStyle = (colorIndex: number): WalkerStyle => {
     const colors: WalkerStyle[] = [
-      { bg: 'rgba(164, 194, 244, 0.2)', text: '#4285f4', border: '#a4c2f4' }, // blue
-      { bg: 'rgba(182, 215, 168, 0.2)', text: '#34a853', border: '#b6d7a8' }, // green
-      { bg: 'rgba(255, 229, 153, 0.2)', text: '#fbbc05', border: '#ffe599' }, // yellow
-      { bg: 'rgba(213, 166, 189, 0.2)', text: '#a142f4', border: '#d5a6bd' }, // purple
-      { bg: 'rgba(234, 153, 153, 0.2)', text: '#ea4335', border: '#ea9999' }, // red
-      { bg: 'rgba(159, 197, 232, 0.2)', text: '#4285f4', border: '#9fc5e8' }, // light blue
-      { bg: 'rgba(213, 213, 213, 0.2)', text: '#5f6368', border: '#d5d5d5' }, // gray
-      { bg: 'rgba(249, 203, 156, 0.2)', text: '#fa7b17', border: '#f9cb9c' }, // orange
-      { bg: 'rgba(180, 167, 214, 0.2)', text: '#7e57c2', border: '#b4a7d6' }, // lavender
-      { bg: 'rgba(201, 218, 248, 0.2)', text: '#4285f4', border: '#c9daf8' }  // sky blue
+      { bg: "rgba(164, 194, 244, 0.2)", text: "#4285f4", border: "#a4c2f4" }, // blue
+      { bg: "rgba(182, 215, 168, 0.2)", text: "#34a853", border: "#b6d7a8" }, // green
+      { bg: "rgba(255, 229, 153, 0.2)", text: "#fbbc05", border: "#ffe599" }, // yellow
+      { bg: "rgba(213, 166, 189, 0.2)", text: "#a142f4", border: "#d5a6bd" }, // purple
+      { bg: "rgba(234, 153, 153, 0.2)", text: "#ea4335", border: "#ea9999" }, // red
+      { bg: "rgba(159, 197, 232, 0.2)", text: "#4285f4", border: "#9fc5e8" }, // light blue
+      { bg: "rgba(213, 213, 213, 0.2)", text: "#5f6368", border: "#d5d5d5" }, // gray
+      { bg: "rgba(249, 203, 156, 0.2)", text: "#fa7b17", border: "#f9cb9c" }, // orange
+      { bg: "rgba(180, 167, 214, 0.2)", text: "#7e57c2", border: "#b4a7d6" }, // lavender
+      { bg: "rgba(201, 218, 248, 0.2)", text: "#4285f4", border: "#c9daf8" }, // sky blue
     ];
-    
+
     return colors[colorIndex % colors.length];
   };
-  
+
   const renderLeaderboardItem = (entry: LeaderboardEntry, index: number) => {
     const style = getWalkerStyle(entry.colorIndex);
-    
+
     return (
-      <div 
-        key={entry.name} 
+      <div
+        key={entry.name}
         className="flex items-center justify-between p-3 mb-2 rounded-md transition-all duration-200"
-        style={{ 
+        style={{
           backgroundColor: style.bg,
-          borderLeft: `4px solid ${style.border}`
+          borderLeft: `4px solid ${style.border}`,
         }}
       >
         <div className="flex items-center">
-          <span className="font-bold text-lg mr-3 text-gray-600 w-6">{index + 1}.</span>
-          <span 
-            className="font-semibold"
-            style={{ color: style.text }}
-          >
+          <span className="font-bold text-lg mr-3 text-gray-600 w-6">
+            {index + 1}.
+          </span>
+          <span className="font-semibold" style={{ color: style.text }}>
             {entry.name}
           </span>
         </div>
         <div className="flex items-center">
-          <Badge 
-            variant="outline" 
+          <Badge
+            variant="outline"
             className="flex items-center gap-1 font-medium"
             style={{ borderColor: style.border, color: style.text }}
           >
             <PawPrintIcon size={14} />
-            {entry.totalWalks} {entry.totalWalks === 1 ? 'walk' : 'walks'}
+            {entry.totalWalks} {entry.totalWalks === 1 ? "walk" : "walks"}
           </Badge>
         </div>
       </div>
     );
   };
-  
+
   return (
-    <Card 
+    <Card
       className={`shadow-md border-t-4 border-finn-primary leaderboard-section transition-all duration-500 ${
-        isHighlighted ? 'scale-[1.02] shadow-lg ring-4 ring-finn-primary ring-opacity-50' : ''
+        isHighlighted
+          ? "scale-[1.02] shadow-lg ring-4 ring-finn-primary ring-opacity-50"
+          : ""
       }`}
       id="leaderboard"
+    >
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-finn-primary">
           <TrophyIcon className="h-5 w-5" />
@@ -157,12 +169,15 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ currentDate }) => {
               Next 7 Days
             </TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="all-time" className="space-y-1">
             {isLoadingAllTime ? (
               <div className="space-y-2">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="flex items-center justify-between p-3">
+                  <div
+                    key={i}
+                    className="flex items-center justify-between p-3"
+                  >
                     <Skeleton className="h-8 w-32" />
                     <Skeleton className="h-8 w-20" />
                   </div>
@@ -175,16 +190,21 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ currentDate }) => {
               </div>
             ) : (
               <div>
-                {allTimeData.map((entry, index) => renderLeaderboardItem(entry, index))}
+                {allTimeData.map((entry, index) =>
+                  renderLeaderboardItem(entry, index),
+                )}
               </div>
             )}
           </TabsContent>
-          
+
           <TabsContent value="next-week" className="space-y-1">
             {isLoadingNextWeek ? (
               <div className="space-y-2">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="flex items-center justify-between p-3">
+                  <div
+                    key={i}
+                    className="flex items-center justify-between p-3"
+                  >
                     <Skeleton className="h-8 w-32" />
                     <Skeleton className="h-8 w-20" />
                   </div>
@@ -197,7 +217,9 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ currentDate }) => {
               </div>
             ) : (
               <div>
-                {nextWeekData.map((entry, index) => renderLeaderboardItem(entry, index))}
+                {nextWeekData.map((entry, index) =>
+                  renderLeaderboardItem(entry, index),
+                )}
               </div>
             )}
           </TabsContent>
