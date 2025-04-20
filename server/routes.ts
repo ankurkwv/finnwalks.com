@@ -101,57 +101,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ error: "Internal server error" });
     }
   });
-  
-  // Search walkers by name for autocomplete
-  app.get("/api/walkers/search", async (req: Request, res: Response) => {
-    try {
-      const query = req.query.q as string || '';
-      const walkers = await storage.searchWalkers(query);
-      res.json(walkers);
-    } catch (error) {
-      console.error("Walker search error:", error);
-      res.status(500).json({ error: "Failed to search walkers" });
-    }
-  });
-  
-  // Get walker by exact name
-  app.get("/api/walkers/:name", async (req: Request, res: Response) => {
-    try {
-      const name = req.params.name;
-      const walker = await storage.getWalkerByName(name);
-      
-      if (!walker) {
-        return res.status(404).json({ error: "Walker not found" });
-      }
-      
-      res.json(walker);
-    } catch (error) {
-      console.error("Walker fetch error:", error);
-      res.status(500).json({ error: "Failed to fetch walker" });
-    }
-  });
-  
-  // Update walker information (create if not exists)
-  app.post("/api/walkers/:name", async (req: Request, res: Response) => {
-    try {
-      const { name } = req.params;
-      const { phone } = req.body;
-      
-      if (!name) {
-        return res.status(400).json({ error: "Name parameter is required" });
-      }
-      
-      if (!phone || typeof phone !== 'string') {
-        return res.status(400).json({ error: "Valid phone number is required" });
-      }
-      
-      const walker = await storage.updateWalker(name, phone);
-      res.json(walker);
-    } catch (error) {
-      console.error("Walker update error:", error);
-      res.status(500).json({ error: "Failed to update walker" });
-    }
-  });
 
   const httpServer = createServer(app);
   return httpServer;

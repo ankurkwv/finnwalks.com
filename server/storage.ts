@@ -1,6 +1,6 @@
 import Database from "@replit/database";
-import { WalkingSlot, InsertSlot, Walker } from "@shared/schema";
-import { eq, and, desc, asc, gte, lte, ilike } from 'drizzle-orm';
+import { WalkingSlot, InsertSlot } from "@shared/schema";
+import { eq, and, desc, asc, gte, lte } from 'drizzle-orm';
 import { db } from './db';
 import { walkingSlots, walkerColors } from '@shared/schema';
 
@@ -11,12 +11,9 @@ export interface IStorage {
   addSlot(slot: InsertSlot): Promise<WalkingSlot>;
   removeSlot(date: string, time: string): Promise<boolean>;
   
-  // Methods for walker management
+  // Methods for walker color management
   getWalkerColorIndex(name: string): Promise<number>;
-  getAllWalkers(): Promise<Walker[]>;
-  getWalkerByName(name: string): Promise<Walker | null>;
-  searchWalkers(query: string): Promise<Walker[]>;
-  updateWalker(name: string, phone: string): Promise<Walker>;
+  getAllWalkers(): Promise<{name: string, colorIndex: number}[]>;
 }
 
 // In-memory implementation for development
@@ -537,97 +534,17 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  // Get all walkers with their color indices and phone numbers
-  async getAllWalkers(): Promise<Walker[]> {
+  // Get all walkers with their color indices
+  async getAllWalkers(): Promise<{name: string, colorIndex: number}[]> {
     try {
       const walkers = await db.select().from(walkerColors);
       return walkers.map(walker => ({
         name: walker.name,
-        colorIndex: walker.colorIndex,
-        phone: walker.phone || undefined
+        colorIndex: walker.colorIndex
       }));
     } catch (error) {
       console.error('Error fetching walkers:', error);
       return [];
-    }
-  }
-  
-  // Get a walker by name (exact match)
-  async getWalkerByName(name: string): Promise<Walker | null> {
-    try {
-      const [walker] = await db.select().from(walkerColors)
-        .where(eq(walkerColors.name, name));
-      
-      if (!walker) return null;
-      
-      return {
-        name: walker.name,
-        colorIndex: walker.colorIndex,
-        phone: walker.phone || undefined
-      };
-    } catch (error) {
-      console.error('Error getting walker by name:', error);
-      return null;
-    }
-  }
-  
-  // Search walkers by partial name match (case insensitive)
-  async searchWalkers(query: string): Promise<Walker[]> {
-    try {
-      if (!query.trim()) return [];
-      
-      const walkers = await db.select().from(walkerColors)
-        .where(ilike(walkerColors.name, `%${query}%`))
-        .limit(5);
-      
-      return walkers.map(walker => ({
-        name: walker.name,
-        colorIndex: walker.colorIndex,
-        phone: walker.phone || undefined
-      }));
-    } catch (error) {
-      console.error('Error searching walkers:', error);
-      return [];
-    }
-  }
-  
-  // Update or create a walker with phone number
-  async updateWalker(name: string, phone: string): Promise<Walker> {
-    try {
-      // Check if walker exists
-      const walker = await this.getWalkerByName(name);
-      
-      if (walker) {
-        // Update existing walker's phone
-        await db.update(walkerColors)
-          .set({ phone })
-          .where(eq(walkerColors.name, name));
-        
-        return {
-          ...walker,
-          phone
-        };
-      } else {
-        // Create new walker with color index and phone
-        const colorIndex = await this.getWalkerColorIndex(name);
-        
-        // Insert new walker since it doesn't exist
-        await db.insert(walkerColors)
-          .values({ name, colorIndex, phone })
-          .onConflictDoUpdate({
-            target: walkerColors.name,
-            set: { phone }
-          });
-          
-        return {
-          name,
-          colorIndex,
-          phone
-        };
-      }
-    } catch (error) {
-      console.error('Error updating walker:', error);
-      throw new Error('Failed to update walker information');
     }
   }
 }
