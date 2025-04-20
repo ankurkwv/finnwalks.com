@@ -43,7 +43,13 @@ export const handlers = [
   
   // Add a slot
   http.post('/api/slot', async ({ request }) => {
-    const data = await request.json();
+    const data = await request.json() as {
+      date: string;
+      time: string;
+      name: string;
+      phone?: string;
+      notes?: string;
+    };
     
     // Check if the slot is already booked
     const date = data.date;
@@ -77,11 +83,14 @@ export const handlers = [
   
   // Delete a slot
   http.delete('/api/slot', async ({ request }) => {
-    const data = await request.json();
-    const { date, time } = data;
+    const data = await request.json() as {
+      date: string;
+      time: string;
+      name: string;
+    };
     
     // Check if the slot exists
-    if (!mockSchedule[date] || !mockSchedule[date].some(slot => slot.time === time)) {
+    if (!mockSchedule[data.date] || !mockSchedule[data.date].some(slot => slot.time === data.time)) {
       return new HttpResponse(
         JSON.stringify({ error: 'Slot not found' }),
         { status: 404 }
@@ -89,7 +98,7 @@ export const handlers = [
     }
     
     // Remove the slot
-    mockSchedule[date] = mockSchedule[date].filter(slot => slot.time !== time);
+    mockSchedule[data.date] = mockSchedule[data.date].filter(slot => slot.time !== data.time);
     
     return HttpResponse.json({ success: true });
   }),
@@ -117,20 +126,22 @@ export const handlers = [
   
   // Update walker
   http.post('/api/walkers/update', async ({ request }) => {
-    const data = await request.json();
-    const { name, phone } = data;
+    const data = await request.json() as {
+      name: string;
+      phone?: string;
+    };
     
-    let walker = mockWalkers.find(w => w.name === name);
+    let walker = mockWalkers.find(w => w.name === data.name);
     
     if (!walker) {
       walker = {
-        name,
+        name: data.name,
         colorIndex: mockWalkers.length % 10,
-        phone
+        phone: data.phone
       };
       mockWalkers.push(walker);
-    } else {
-      walker.phone = phone;
+    } else if (data.phone) {
+      walker.phone = data.phone;
     }
     
     return HttpResponse.json(walker);
