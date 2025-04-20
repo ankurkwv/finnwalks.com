@@ -134,11 +134,38 @@ class MemStorage implements IStorage {
   }
   
   // Get all walkers with their color indices
-  async getAllWalkers(): Promise<{name: string, colorIndex: number}[]> {
+  async getAllWalkers(): Promise<{name: string, colorIndex: number, phone?: string}[]> {
     return Object.entries(this.walkers).map(([name, colorIndex]) => ({
       name,
       colorIndex
     }));
+  }
+  
+  // Search walkers by partial name match
+  async searchWalkers(query: string): Promise<{name: string, colorIndex: number, phone?: string}[]> {
+    if (!query) {
+      return this.getAllWalkers();
+    }
+    
+    const lowerQuery = query.toLowerCase();
+    const walkers = await this.getAllWalkers();
+    
+    return walkers.filter(walker => 
+      walker.name.toLowerCase().includes(lowerQuery)
+    );
+  }
+  
+  // Update walker information
+  async updateWalker(name: string, phone?: string): Promise<{name: string, colorIndex: number, phone?: string}> {
+    // Get or create the color index for this walker
+    const colorIndex = await this.getWalkerColorIndex(name);
+    
+    // Return the updated walker info (note: in-memory implementation doesn't store phone numbers)
+    return {
+      name,
+      colorIndex,
+      phone
+    };
   }
 }
 
@@ -344,8 +371,8 @@ export class ReplitStorage implements IStorage {
   }
   
   // Get all walkers with their color indices
-  async getAllWalkers(): Promise<{name: string, colorIndex: number}[]> {
-    const walkers: {name: string, colorIndex: number}[] = [];
+  async getAllWalkers(): Promise<{name: string, colorIndex: number, phone?: string}[]> {
+    const walkers: {name: string, colorIndex: number, phone?: string}[] = [];
     
     try {
       // Get all keys from database
@@ -365,7 +392,8 @@ export class ReplitStorage implements IStorage {
               const name = key.substring(7); // Remove 'walker:' prefix
               walkers.push({
                 name,
-                colorIndex: value.colorIndex
+                colorIndex: value.colorIndex,
+                phone: value.phone
               });
             }
           } catch (e) {
@@ -378,6 +406,49 @@ export class ReplitStorage implements IStorage {
     }
     
     return walkers;
+  }
+  
+  // Search walkers by partial name match
+  async searchWalkers(query: string): Promise<{name: string, colorIndex: number, phone?: string}[]> {
+    if (!query) {
+      return this.getAllWalkers();
+    }
+    
+    const lowerQuery = query.toLowerCase();
+    const walkers = await this.getAllWalkers();
+    
+    return walkers.filter(walker => 
+      walker.name.toLowerCase().includes(lowerQuery)
+    );
+  }
+  
+  // Update walker information
+  async updateWalker(name: string, phone?: string): Promise<{name: string, colorIndex: number, phone?: string}> {
+    try {
+      const walkerKey = this.createWalkerKey(name);
+      
+      // Get the current color index or generate a new one
+      const colorIndex = await this.getWalkerColorIndex(name);
+      
+      // Update the walker data with the phone number
+      await this.db.set(walkerKey, { 
+        colorIndex,
+        phone: phone || undefined
+      });
+      
+      return {
+        name,
+        colorIndex,
+        phone
+      };
+    } catch (error) {
+      console.error('Error updating walker:', error);
+      return {
+        name,
+        colorIndex: 0,
+        phone
+      };
+    }
   }
 }
 

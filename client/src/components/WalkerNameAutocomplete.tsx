@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Walker } from '@shared/schema';
 import { Input } from '@/components/ui/input';
-import { apiRequest } from '../lib/queryClient';
 
 interface WalkerNameAutocompleteProps {
   value: string;
@@ -35,7 +34,8 @@ const WalkerNameAutocomplete: React.FC<WalkerNameAutocompleteProps> = ({
 
       try {
         setLoading(true);
-        const walkers = await apiRequest<Walker[]>(`/api/walkers/search?q=${encodeURIComponent(debouncedSearch)}`);
+        const response = await fetch(`/api/walkers/search?q=${encodeURIComponent(debouncedSearch)}`);
+        const walkers = await response.json();
         setSearchResults(walkers || []);
       } catch (error) {
         console.error('Error searching walkers:', error);
