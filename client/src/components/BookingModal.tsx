@@ -75,6 +75,14 @@ const BookingModal: React.FC<BookingModalProps> = ({
     if (walker.phone) {
       setPhone(walker.phone);
     }
+    
+    // Auto-focus on time picker after name selection
+    const timeSelect = document.getElementById("time");
+    if (timeSelect) {
+      setTimeout(() => {
+        timeSelect.click();
+      }, 100); // Small delay to ensure UI has updated
+    }
   };
 
   // Update walker info in database
