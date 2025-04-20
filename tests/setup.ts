@@ -3,6 +3,20 @@ import { cleanup } from '@testing-library/react';
 import * as matchers from '@testing-library/jest-dom/matchers';
 import { server } from './mocks/server';
 
+// Add missing matchers that TypeScript needs
+declare global {
+  namespace Vi {
+    interface Assertion {
+      toBeInTheDocument(): void;
+      toHaveClass(className: string): void;
+      toBeDisabled(): void;
+      toHaveAttribute(attr: string, value?: string): void;
+      toBeVisible(): void;
+      toBeChecked(): void;
+    }
+  }
+}
+
 // Extend Vitest's expect method with methods from react-testing-library
 expect.extend(matchers);
 

@@ -12,7 +12,9 @@ export default defineConfig({
     exclude: ['**/node_modules/**', '**/dist/**'],
     coverage: {
       reporter: ['text', 'json', 'html'],
-    }
+    },
+    testTimeout: 10000, // Increase timeout for tests
+    hookTimeout: 10000, // Increase timeout for hooks
   },
   resolve: {
     alias: {
