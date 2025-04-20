@@ -11,9 +11,11 @@ export interface IStorage {
   addSlot(slot: InsertSlot): Promise<WalkingSlot>;
   removeSlot(date: string, time: string): Promise<boolean>;
   
-  // Methods for walker color management
+  // Methods for walker management
   getWalkerColorIndex(name: string): Promise<number>;
-  getAllWalkers(): Promise<{name: string, colorIndex: number}[]>;
+  getAllWalkers(): Promise<{name: string, colorIndex: number, phone?: string}[]>;
+  searchWalkers(query: string): Promise<{name: string, colorIndex: number, phone?: string}[]>;
+  updateWalker(name: string, phone?: string): Promise<{name: string, colorIndex: number, phone?: string}>;
 }
 
 // In-memory implementation for development
@@ -534,17 +536,82 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  // Get all walkers with their color indices
-  async getAllWalkers(): Promise<{name: string, colorIndex: number}[]> {
+  // Get all walkers with their color indices and phone numbers
+  async getAllWalkers(): Promise<{name: string, colorIndex: number, phone?: string}[]> {
     try {
       const walkers = await db.select().from(walkerColors);
       return walkers.map(walker => ({
         name: walker.name,
-        colorIndex: walker.colorIndex
+        colorIndex: walker.colorIndex,
+        phone: walker.phone
       }));
     } catch (error) {
       console.error('Error fetching walkers:', error);
       return [];
+    }
+  }
+  
+  // Search walkers by partial name match
+  async searchWalkers(query: string): Promise<{name: string, colorIndex: number, phone?: string}[]> {
+    try {
+      if (!query || query.trim() === '') {
+        return this.getAllWalkers();
+      }
+      
+      // Get all walkers and filter by name (case-insensitive)
+      const allWalkers = await this.getAllWalkers();
+      const lowerQuery = query.toLowerCase();
+      
+      return allWalkers.filter(walker => 
+        walker.name.toLowerCase().includes(lowerQuery)
+      );
+    } catch (error) {
+      console.error('Error searching walkers:', error);
+      return [];
+    }
+  }
+  
+  // Update or create a walker with phone number
+  async updateWalker(name: string, phone?: string): Promise<{name: string, colorIndex: number, phone?: string}> {
+    try {
+      // Check if walker exists
+      const [walker] = await db.select().from(walkerColors)
+        .where(eq(walkerColors.name, name));
+      
+      if (walker) {
+        // Update existing walker
+        await db.update(walkerColors)
+          .set({ phone })
+          .where(eq(walkerColors.name, name));
+        
+        return {
+          name,
+          colorIndex: walker.colorIndex,
+          phone
+        };
+      } else {
+        // Create new walker with a color index
+        const colorIndex = await this.getWalkerColorIndex(name);
+        
+        // Update with phone number
+        await db.update(walkerColors)
+          .set({ phone })
+          .where(eq(walkerColors.name, name));
+        
+        return {
+          name,
+          colorIndex,
+          phone
+        };
+      }
+    } catch (error) {
+      console.error('Error updating walker:', error);
+      // Return a default value in case of error
+      return {
+        name,
+        colorIndex: 0,
+        phone
+      };
     }
   }
 }

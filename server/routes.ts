@@ -101,6 +101,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ error: "Internal server error" });
     }
   });
+  
+  // Search walkers by name (partial match)
+  app.get("/api/walkers/search", async (req: Request, res: Response) => {
+    try {
+      const query = req.query.q as string || "";
+      const walkers = await storage.searchWalkers(query);
+      return res.json(walkers);
+    } catch (error) {
+      console.error("Walker search error:", error);
+      res.status(500).json({ error: "Failed to search walkers" });
+    }
+  });
+  
+  // Update walker information (automatically happens when booking, but exposed as API for flexibility)
+  app.post("/api/walkers/update", async (req: Request, res: Response) => {
+    try {
+      const { name, phone } = req.body;
+      
+      if (!name || !name.trim()) {
+        return res.status(400).json({ error: "Walker name is required" });
+      }
+      
+      const walker = await storage.updateWalker(name.trim(), phone);
+      return res.json(walker);
+    } catch (error) {
+      console.error("Walker update error:", error);
+      res.status(500).json({ error: "Failed to update walker" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

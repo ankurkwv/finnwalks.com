@@ -16,6 +16,7 @@ export const walkingSlots = pgTable('walking_slots', {
 export const walkerColors = pgTable('walker_colors', {
   name: text('name').primaryKey(),                 // Walker's name
   colorIndex: integer('color_index').notNull(),    // Color index (0-9)
+  phone: text('phone'),                            // Walker's phone number (E.164 format)
 });
 
 // WalkingSlot type matches the database schema
@@ -53,4 +54,11 @@ export type DaySchedule = {
 
 export type WeekSchedule = {
   [date: string]: WalkingSlot[];
+};
+
+// Walker type definition
+export type Walker = {
+  name: string;
+  colorIndex: number;
+  phone?: string;
 };
