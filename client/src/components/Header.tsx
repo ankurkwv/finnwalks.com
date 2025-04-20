@@ -1,7 +1,7 @@
 import React from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import finnImage from '../assets/finn.webp';
-import { TrophyIcon } from 'lucide-react';
+import { TrophyIcon, InfoIcon } from 'lucide-react';
 
 interface HeaderProps {
   onPrevWeek: () => void;
@@ -67,10 +67,9 @@ const Header: React.FC<HeaderProps> = ({
             onClick={onInfoClick}
             className="p-2 text-finn-primary hover:bg-blue-50 rounded-full transition-colors"
             aria-label="Care Instructions"
+            title="Care Instructions"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            <InfoIcon className="h-6 w-6" />
           </button>
         </div>
       </div>
