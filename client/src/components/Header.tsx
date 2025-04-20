@@ -17,6 +17,14 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const [userName] = useLocalStorage<string>('userName', '');
 
+  // Function to scroll to leaderboard section
+  const scrollToLeaderboard = () => {
+    const leaderboardElement = document.querySelector('.leaderboard-section');
+    if (leaderboardElement) {
+      leaderboardElement.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <header className="bg-white shadow-sm sticky top-0 z-10">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -38,6 +46,18 @@ const Header: React.FC<HeaderProps> = ({
               Hi, {userName}
             </span>
           )}
+          
+          {/* Trophy button for leaderboard */}
+          <button 
+            onClick={scrollToLeaderboard}
+            className="p-2 text-finn-primary hover:bg-blue-50 rounded-full transition-colors"
+            aria-label="View Leaderboard"
+            title="View Leaderboard"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+            </svg>
+          </button>
           
           {/* Info button */}
           <button 

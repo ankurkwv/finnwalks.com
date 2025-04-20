@@ -88,7 +88,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ currentDate }) => {
   };
   
   return (
-    <Card className="shadow-md border-t-4 border-finn-primary">
+    <Card className="shadow-md border-t-4 border-finn-primary leaderboard-section">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-finn-primary">
           <TrophyIcon className="h-5 w-5" />
