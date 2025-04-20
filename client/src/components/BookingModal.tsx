@@ -200,6 +200,9 @@ const BookingModal: React.FC<BookingModalProps> = ({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Book a Walk on {formatDate(date)}</DialogTitle>
+          <DialogDescription>
+            Fill in the details to book your dog walk
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-2 py-4">
