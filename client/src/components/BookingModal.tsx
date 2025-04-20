@@ -19,47 +19,76 @@ interface WalkerAutocompleteProps {
 }
 
 const WalkerAutocomplete: React.FC<WalkerAutocompleteProps> = ({ searchTerm, onSelect }) => {
-  const [debouncedSearch, setDebouncedSearch] = useState(searchTerm);
-  const { data: walkers = [], isLoading } = useSearchWalkers(debouncedSearch);
-  const [isVisible, setIsVisible] = useState(false);
+  // State for controlling dropdown visibility
+  const [showDropdown, setShowDropdown] = useState(false);
+  // Track when a selection has been made
+  const [selectionMade, setSelectionMade] = useState(false);
+  // Ref for detecting clicks outside the component
   const wrapperRef = useRef<HTMLDivElement>(null);
   
-  // Debounce the search term to avoid excessive API calls
+  // Debounced search query to limit API calls
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const { data: walkers = [] } = useSearchWalkers(debouncedQuery);
+
+  // Handle outside clicks to close the dropdown
   useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearch(searchTerm);
-    }, 300); // 300ms delay
-    
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [searchTerm]);
-  
-  // Hide dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleOutsideClick = (event: MouseEvent) => {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
-        setIsVisible(false);
+        setShowDropdown(false);
       }
     };
     
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
-  
-  // Show dropdown when typing and there are matches, hide when term is cleared
+
+  // Debounce the search term and control dropdown visibility
   useEffect(() => {
-    // Only show dropdown when actively typing (at least 1 character)
-    if (searchTerm && searchTerm.trim().length > 0 && walkers.length > 0) {
-      setIsVisible(true);
-    } else {
-      setIsVisible(false);
+    // Reset selection state when search term changes
+    if (selectionMade) {
+      setSelectionMade(false);
+      return; // Skip this effect cycle after selection
     }
-  }, [searchTerm, walkers]);
+    
+    // If search term is empty, hide dropdown
+    if (!searchTerm || searchTerm.trim().length === 0) {
+      setShowDropdown(false);
+      return;
+    }
+    
+    // Otherwise, set up debounce delay for search
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchTerm);
+      // Show dropdown only if we have a search term
+      setShowDropdown(searchTerm.trim().length > 0);
+    }, 300);
+    
+    return () => clearTimeout(timer);
+  }, [searchTerm, selectionMade]);
   
-  if (!isVisible || !walkers.length) {
+  // When walkers list changes, update dropdown visibility
+  useEffect(() => {
+    if (selectionMade) return;
+    
+    // Hide dropdown if we have no results
+    if (walkers.length === 0 && showDropdown) {
+      setShowDropdown(false);
+    }
+    // Show dropdown if we have results and a search term
+    else if (walkers.length > 0 && searchTerm && searchTerm.trim().length > 0) {
+      setShowDropdown(true);
+    }
+  }, [walkers, searchTerm, showDropdown, selectionMade]);
+
+  // Handler for selection
+  const handleSelection = (walker: Walker) => {
+    setSelectionMade(true);    // Mark that a selection was made
+    setShowDropdown(false);    // Hide dropdown immediately
+    onSelect(walker);          // Call parent handler
+  };
+  
+  // Don't render anything if dropdown should be hidden or no results
+  if (!showDropdown || walkers.length === 0) {
     return null;
   }
   
@@ -72,10 +101,7 @@ const WalkerAutocomplete: React.FC<WalkerAutocompleteProps> = ({ searchTerm, onS
         <div
           key={walker.name}
           className="px-4 py-2 cursor-pointer hover:bg-gray-100 flex justify-between"
-          onClick={() => {
-            onSelect(walker);
-            setIsVisible(false);
-          }}
+          onClick={() => handleSelection(walker)}
         >
           <span>{walker.name}</span>
           {walker.phone && <span className="text-gray-500 text-sm">{walker.phone}</span>}
