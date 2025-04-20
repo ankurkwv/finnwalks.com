@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { formatDate, getAvailableTimes } from '../lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { InsertSlot } from '@shared/schema';
+import { InsertSlot, Walker } from '@shared/schema';
 import PhoneInput from 'react-phone-number-input/input';
+import WalkerNameAutocomplete from './WalkerNameAutocomplete';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -39,6 +40,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
   const [notes, setNotes] = useState<string>('');
   const [name, setName] = useState<string>(userName);
   const [phone, setPhone] = useState<string>(userPhone || '');
+  const [isUpdatingWalker, setIsUpdatingWalker] = useState<boolean>(false);
   const { toast } = useToast();
   
   // Available times for this day
@@ -54,7 +56,41 @@ const BookingModal: React.FC<BookingModalProps> = ({
     }
   }, [isOpen, userName, userPhone]);
   
-  const handleSubmit = () => {
+  // Handle when a walker is selected from autocomplete
+  const handleWalkerSelect = (walker: Walker) => {
+    setName(walker.name);
+    if (walker.phone) {
+      setPhone(walker.phone);
+    }
+  };
+  
+  // Update walker info in database
+  const updateWalkerInfo = async () => {
+    if (!name.trim()) return;
+    
+    try {
+      setIsUpdatingWalker(true);
+      
+      // Call the API to update walker info
+      await fetch('/api/walkers/update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: name.trim(),
+          phone: phone || undefined,
+        }),
+      });
+      
+    } catch (error) {
+      console.error('Error updating walker information:', error);
+    } finally {
+      setIsUpdatingWalker(false);
+    }
+  };
+  
+  const handleSubmit = async () => {
     if (!selectedTime) {
       toast({
         title: "Error",
@@ -93,6 +129,9 @@ const BookingModal: React.FC<BookingModalProps> = ({
       return;
     }
     
+    // Update walker info in database
+    await updateWalkerInfo();
+    
     onSubmit({
       date,
       time: selectedTime,
@@ -117,11 +156,11 @@ const BookingModal: React.FC<BookingModalProps> = ({
           
           <div className="space-y-2">
             <Label htmlFor="walker-name">Your Name</Label>
-            <Input
-              id="walker-name"
-              placeholder="Enter your name"
+            <WalkerNameAutocomplete
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={setName}
+              onWalkerSelect={handleWalkerSelect}
+              placeholder="Start typing your name..."
               className="w-full"
             />
           </div>
@@ -183,9 +222,9 @@ const BookingModal: React.FC<BookingModalProps> = ({
           <Button
             className="w-full"
             onClick={handleSubmit}
-            disabled={!selectedTime || !name.trim() || isSubmitting}
+            disabled={!selectedTime || !name.trim() || isSubmitting || isUpdatingWalker}
           >
-            {isSubmitting ? "Booking..." : "Book Walk"}
+            {isSubmitting || isUpdatingWalker ? "Booking..." : "Book Walk"}
           </Button>
         </DialogFooter>
       </DialogContent>
