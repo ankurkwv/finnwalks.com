@@ -19,9 +19,21 @@ interface WalkerAutocompleteProps {
 }
 
 const WalkerAutocomplete: React.FC<WalkerAutocompleteProps> = ({ searchTerm, onSelect }) => {
-  const { data: walkers = [], isLoading } = useSearchWalkers(searchTerm);
+  const [debouncedSearch, setDebouncedSearch] = useState(searchTerm);
+  const { data: walkers = [], isLoading } = useSearchWalkers(debouncedSearch);
   const [isVisible, setIsVisible] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  
+  // Debounce the search term to avoid excessive API calls
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 300); // 300ms delay
+    
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchTerm]);
   
   // Hide dropdown when clicking outside
   useEffect(() => {
@@ -37,9 +49,10 @@ const WalkerAutocomplete: React.FC<WalkerAutocompleteProps> = ({ searchTerm, onS
     };
   }, []);
   
-  // Show dropdown when typing and there are matches
+  // Show dropdown when typing and there are matches, hide when term is cleared
   useEffect(() => {
-    if (searchTerm && walkers.length > 0) {
+    // Only show dropdown when actively typing (at least 1 character)
+    if (searchTerm && searchTerm.trim().length > 0 && walkers.length > 0) {
       setIsVisible(true);
     } else {
       setIsVisible(false);
@@ -210,10 +223,13 @@ const BookingModal: React.FC<BookingModalProps> = ({
             <WalkerAutocomplete
               searchTerm={name}
               onSelect={(walker) => {
+                // When selecting from dropdown, update both name and phone if available
                 setName(walker.name);
                 if (walker.phone) {
                   setPhone(walker.phone);
                 }
+                // Force blur on the input to hide keyboard on mobile devices
+                document.getElementById('walker-name')?.blur();
               }}
             />
           </div>
