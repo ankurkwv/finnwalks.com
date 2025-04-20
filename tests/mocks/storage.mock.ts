@@ -1,164 +1,196 @@
 import { vi } from 'vitest';
-import { InsertSlot, WalkingSlot, DeleteSlot, Walker } from '../../shared/schema';
 import type { IStorage } from '../../server/storage';
+import type { WalkingSlot, InsertSlot } from '../../shared/schema';
 
-// Mock data for in-memory testing
-const mockSlots: Record<string, WalkingSlot[]> = {
-  '2025-04-20': [
-    {
-      date: '2025-04-20',
-      time: '1200',
-      name: 'Arpoo',
-      notes: 'Regular walk',
-      timestamp: Date.now() - 100000
-    }
-  ],
-  '2025-04-21': [],
-  '2025-04-22': [],
-  '2025-04-23': [],
-  '2025-04-24': [],
-  '2025-04-25': [],
-  '2025-04-26': []
-};
-
-const mockWalkers: Walker[] = [
-  { name: 'Arpoo', colorIndex: 0, phone: '+1234567890' },
-  { name: 'Bruno', colorIndex: 1, phone: '+1987654321' },
-  { name: 'Charlie', colorIndex: 2 }
-];
-
-// Synchronous color index calculation for internal use
+/**
+ * A simple in-memory hash function for consistent color mapping
+ */
 function getWalkerColorIndexSync(name: string): number {
-  const walker = mockWalkers.find(w => w.name === name);
-  if (walker) return walker.colorIndex;
-  
-  // Deterministic color assignment based on name
+  // Simple hash function to get a number between 0-9 for a given name
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = ((hash << 5) - hash) + name.charCodeAt(i);
-    hash |= 0; // Convert to 32bit integer
+    hash = hash & hash; // Convert to 32bit integer
   }
-  return Math.abs(hash % 10); // 10 colors available
+  return Math.abs(hash % 10); // Return value between 0-9
 }
 
-// Create a mock storage implementation for testing
+// In-memory storage for testing
+const mockSlots: Record<string, WalkingSlot> = {};
+const mockWalkers: Record<string, { colorIndex: number, phone?: string }> = {};
+
 export const mockStorage: IStorage = {
-  getSchedule: vi.fn(async (startDate: string) => {
-    return { ...mockSlots };
+  // Schedule methods
+  getSchedule: vi.fn(async (startDate: string): Promise<Record<string, WalkingSlot[]>> => {
+    // Generate a week of dates
+    const start = new Date(startDate);
+    const schedule: Record<string, WalkingSlot[]> = {};
+    
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(start);
+      date.setDate(date.getDate() + i);
+      const dateStr = date.toISOString().split('T')[0];
+      
+      // Find slots for this date
+      schedule[dateStr] = Object.values(mockSlots).filter(slot => slot.date === dateStr);
+    }
+    
+    return schedule;
   }),
   
-  getSlot: vi.fn(async (date: string, time: string) => {
-    const slots = mockSlots[date] || [];
-    return slots.find(slot => slot.time === time) || null;
+  getSlot: vi.fn(async (date: string, time: string): Promise<WalkingSlot | null> => {
+    const key = `${date}:${time}`;
+    return mockSlots[key] || null;
   }),
   
-  addSlot: vi.fn(async (slotData: InsertSlot) => {
+  addSlot: vi.fn(async (slotData: InsertSlot): Promise<WalkingSlot> => {
+    const { date, time, name, phone, notes } = slotData;
+    const key = `${date}:${time}`;
+    
+    // Check if slot is already booked
+    if (mockSlots[key]) {
+      throw new Error('Slot already booked');
+    }
+    
+    // Create a new slot
     const newSlot: WalkingSlot = {
-      date: slotData.date,
-      time: slotData.time,
-      name: slotData.name,
-      phone: slotData.phone,
-      notes: slotData.notes || '',
+      date,
+      time,
+      name,
+      phone,
+      notes,
       timestamp: Date.now()
     };
     
-    if (!mockSlots[slotData.date]) {
-      mockSlots[slotData.date] = [];
+    mockSlots[key] = newSlot;
+    
+    // Add walker if not exists
+    if (!mockWalkers[name]) {
+      mockWalkers[name] = { colorIndex: getWalkerColorIndexSync(name), phone };
     }
     
-    mockSlots[slotData.date].push(newSlot);
     return newSlot;
   }),
   
-  removeSlot: vi.fn(async (date: string, time: string) => {
-    if (!mockSlots[date]) return false;
+  removeSlot: vi.fn(async (date: string, time: string): Promise<boolean> => {
+    const key = `${date}:${time}`;
     
-    const initialLength = mockSlots[date].length;
-    mockSlots[date] = mockSlots[date].filter(slot => slot.time !== time);
-    
-    return mockSlots[date].length < initialLength;
-  }),
-  
-  getWalkerColorIndex: vi.fn(async (name: string) => {
-    return getWalkerColorIndexSync(name);
-  }),
-  
-  getAllWalkers: vi.fn(async () => {
-    return [...mockWalkers];
-  }),
-  
-  searchWalkers: vi.fn(async (query: string) => {
-    // Add walkers created by addSlot to the walkers list
-    const allWalkers: Walker[] = [...mockWalkers];
-    
-    // Get all the unique walker names from slot bookings
-    Object.values(mockSlots).forEach(slots => {
-      slots.forEach(slot => {
-        if (!allWalkers.some(w => w.name === slot.name)) {
-          allWalkers.push({
-            name: slot.name,
-            colorIndex: getWalkerColorIndexSync(slot.name),
-            phone: slot.phone
-          });
-        }
-      });
-    });
-    
-    // Filter by query
-    return allWalkers.filter(walker => 
-      walker.name.toLowerCase().includes(query.toLowerCase())
-    );
-  }),
-  
-  updateWalker: vi.fn(async (name: string, phone?: string) => {
-    let walker = mockWalkers.find(w => w.name === name);
-    
-    if (!walker) {
-      walker = { 
-        name, 
-        colorIndex: mockWalkers.length % 10,
-        phone 
-      };
-      mockWalkers.push(walker);
-    } else if (phone) {
-      walker.phone = phone;
+    if (!mockSlots[key]) {
+      return false;
     }
     
-    return { ...walker };
+    delete mockSlots[key];
+    return true;
   }),
   
-  getLeaderboardAllTime: vi.fn(async () => {
-    return [
-      { name: 'Arpoo', totalWalks: 2, colorIndex: 0 },
-      { name: 'Bruno', totalWalks: 1, colorIndex: 1 }
-    ];
+  // Walker methods
+  getWalkerColorIndex: vi.fn(async (name: string): Promise<number> => {
+    if (mockWalkers[name]) {
+      return mockWalkers[name].colorIndex;
+    }
+    
+    // If walker doesn't exist, create a new one
+    const colorIndex = getWalkerColorIndexSync(name);
+    mockWalkers[name] = { colorIndex };
+    return colorIndex;
   }),
   
-  getLeaderboardNextWeek: vi.fn(async () => {
-    return [
-      { name: 'Arpoo', totalWalks: 1, colorIndex: 0 }
-    ];
+  getAllWalkers: vi.fn(async (): Promise<{name: string, colorIndex: number, phone?: string}[]> => {
+    return Object.entries(mockWalkers).map(([name, data]) => ({
+      name,
+      colorIndex: data.colorIndex,
+      phone: data.phone
+    }));
+  }),
+  
+  searchWalkers: vi.fn(async (query: string): Promise<{name: string, colorIndex: number, phone?: string}[]> => {
+    const lowerQuery = query.toLowerCase();
+    return Object.entries(mockWalkers)
+      .filter(([name]) => name.toLowerCase().includes(lowerQuery))
+      .map(([name, data]) => ({
+        name,
+        colorIndex: data.colorIndex,
+        phone: data.phone
+      }));
+  }),
+  
+  updateWalker: vi.fn(async (name: string, phone?: string): Promise<{name: string, colorIndex: number, phone?: string}> => {
+    if (mockWalkers[name]) {
+      if (phone !== undefined) {
+        mockWalkers[name].phone = phone;
+      }
+    } else {
+      mockWalkers[name] = {
+        colorIndex: getWalkerColorIndexSync(name),
+        phone
+      };
+    }
+    
+    return {
+      name,
+      colorIndex: mockWalkers[name].colorIndex,
+      phone: mockWalkers[name].phone
+    };
+  }),
+  
+  // Leaderboard methods
+  getLeaderboardAllTime: vi.fn(async (): Promise<Array<{name: string, totalWalks: number, colorIndex: number}>> => {
+    // Count the number of walks for each walker
+    const walkerCounts: Record<string, number> = {};
+    
+    Object.values(mockSlots).forEach(slot => {
+      walkerCounts[slot.name] = (walkerCounts[slot.name] || 0) + 1;
+    });
+    
+    // Convert to leaderboard format
+    return Object.entries(walkerCounts)
+      .map(([name, totalWalks]) => ({
+        name,
+        totalWalks,
+        colorIndex: mockWalkers[name]?.colorIndex || getWalkerColorIndexSync(name)
+      }))
+      .sort((a, b) => b.totalWalks - a.totalWalks);
+  }),
+  
+  getLeaderboardNextWeek: vi.fn(async (startDate: string): Promise<Array<{name: string, totalWalks: number, colorIndex: number}>> => {
+    // Generate a week of dates
+    const start = new Date(startDate);
+    const endDate = new Date(start);
+    endDate.setDate(endDate.getDate() + 7);
+    
+    // Count walks for each walker in the next week only
+    const walkerCounts: Record<string, number> = {};
+    
+    Object.values(mockSlots).forEach(slot => {
+      const slotDate = new Date(slot.date);
+      if (slotDate >= start && slotDate < endDate) {
+        walkerCounts[slot.name] = (walkerCounts[slot.name] || 0) + 1;
+      }
+    });
+    
+    // Convert to leaderboard format
+    return Object.entries(walkerCounts)
+      .map(([name, totalWalks]) => ({
+        name,
+        totalWalks,
+        colorIndex: mockWalkers[name]?.colorIndex || getWalkerColorIndexSync(name)
+      }))
+      .sort((a, b) => b.totalWalks - a.totalWalks);
   })
 };
 
-// Reset all mock data
+// Reset function to clear all mock data
 export function resetMockStorage() {
-  Object.keys(mockSlots).forEach(date => {
-    if (date === '2025-04-20') {
-      mockSlots[date] = [
-        {
-          date: '2025-04-20',
-          time: '1200',
-          name: 'Arpoo',
-          notes: 'Regular walk',
-          timestamp: Date.now() - 100000
-        }
-      ];
-    } else {
-      mockSlots[date] = [];
-    }
+  // Clear all slots
+  Object.keys(mockSlots).forEach(key => {
+    delete mockSlots[key];
   });
   
-  // Reset call history for all mocks
+  // Clear all walkers
+  Object.keys(mockWalkers).forEach(key => {
+    delete mockWalkers[key];
+  });
+  
+  // Reset mock function call history
   vi.clearAllMocks();
 }
