@@ -5,11 +5,16 @@ import { Walker } from '@shared/schema';
 // Search walkers by name (for autocomplete)
 export function useSearchWalkers(query: string) {
   return useQuery({
-    queryKey: ['walkers', 'search', query],
-    queryFn: async () => {
+    queryKey: ['/api/walkers/search?q=' + encodeURIComponent(query)],
+    queryFn: async ({ queryKey }) => {
       if (!query.trim()) return [];
-      const data = await apiRequest<Walker[]>(`/api/walkers/search?q=${encodeURIComponent(query)}`);
-      return data || [];
+      // Use default queryFn
+      const res = await fetch(queryKey[0] as string);
+      if (!res.ok) {
+        if (res.status === 404) return [];
+        throw new Error('Failed to fetch walkers');
+      }
+      return await res.json();
     },
     enabled: !!query.trim(),
     staleTime: 10000, // Cache results for 10 seconds
@@ -19,11 +24,16 @@ export function useSearchWalkers(query: string) {
 // Get a walker by exact name
 export function useWalker(name: string) {
   return useQuery({
-    queryKey: ['walkers', name],
-    queryFn: async () => {
+    queryKey: [`/api/walkers/${encodeURIComponent(name)}`],
+    queryFn: async ({ queryKey }) => {
       if (!name.trim()) return null;
       try {
-        return await apiRequest<Walker>(`/api/walkers/${encodeURIComponent(name)}`);
+        const res = await fetch(queryKey[0] as string);
+        if (!res.ok) {
+          if (res.status === 404) return null;
+          throw new Error('Failed to fetch walker');
+        }
+        return await res.json();
       } catch (err) {
         // If 404, return null
         if (err instanceof Error && err.message.includes('404')) {

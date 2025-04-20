@@ -165,6 +165,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ phone }),
+          credentials: 'include',
         });
       } catch (error) {
         console.error('Failed to update walker information:', error);
