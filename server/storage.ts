@@ -16,6 +16,10 @@ export interface IStorage {
   getAllWalkers(): Promise<{name: string, colorIndex: number, phone?: string}[]>;
   searchWalkers(query: string): Promise<{name: string, colorIndex: number, phone?: string}[]>;
   updateWalker(name: string, phone?: string): Promise<{name: string, colorIndex: number, phone?: string}>;
+  
+  // Leaderboard methods
+  getLeaderboardAllTime(): Promise<Array<{name: string, totalWalks: number, colorIndex: number}>>;
+  getLeaderboardNextWeek(startDate: string): Promise<Array<{name: string, totalWalks: number, colorIndex: number}>>;
 }
 
 // In-memory implementation for development
@@ -683,6 +687,79 @@ export class DatabaseStorage implements IStorage {
         colorIndex: 0,
         phone
       };
+    }
+  }
+  
+  // Get leaderboard of walkers with the most walks (all time)
+  async getLeaderboardAllTime(): Promise<Array<{name: string, totalWalks: number, colorIndex: number}>> {
+    try {
+      // Get all slots from the database
+      const slots = await db.select().from(walkingSlots);
+      
+      // Count walks per walker
+      const walkCounts: Record<string, number> = {};
+      for (const slot of slots) {
+        const walkerName = slot.name;
+        walkCounts[walkerName] = (walkCounts[walkerName] || 0) + 1;
+      }
+      
+      // Convert to array and sort by count (descending)
+      const leaderboard = await Promise.all(
+        Object.entries(walkCounts).map(async ([name, totalWalks]) => {
+          // Get color index for each walker
+          const colorIndex = await this.getWalkerColorIndex(name);
+          return { name, totalWalks, colorIndex };
+        })
+      );
+      
+      // Sort by total walks (descending)
+      return leaderboard.sort((a, b) => b.totalWalks - a.totalWalks);
+    } catch (error) {
+      console.error("Error fetching all-time leaderboard:", error);
+      return [];
+    }
+  }
+  
+  // Get leaderboard for the next 7 days
+  async getLeaderboardNextWeek(startDate: string): Promise<Array<{name: string, totalWalks: number, colorIndex: number}>> {
+    try {
+      // Calculate the date range
+      const startDateObj = new Date(startDate);
+      const endDateObj = new Date(startDate);
+      endDateObj.setDate(endDateObj.getDate() + 6);
+      
+      // Convert to ISO date strings for comparison
+      const startDateStr = startDateObj.toISOString().split('T')[0];
+      const endDateStr = endDateObj.toISOString().split('T')[0];
+      
+      // Get slots for the date range
+      const slots = await db.select().from(walkingSlots)
+        .where(and(
+          gte(walkingSlots.date, startDateStr),
+          lte(walkingSlots.date, endDateStr)
+        ));
+      
+      // Count walks per walker for this week
+      const walkCounts: Record<string, number> = {};
+      for (const slot of slots) {
+        const walkerName = slot.name;
+        walkCounts[walkerName] = (walkCounts[walkerName] || 0) + 1;
+      }
+      
+      // Convert to array and get color indices
+      const leaderboard = await Promise.all(
+        Object.entries(walkCounts).map(async ([name, totalWalks]) => {
+          // Get color index for each walker
+          const colorIndex = await this.getWalkerColorIndex(name);
+          return { name, totalWalks, colorIndex };
+        })
+      );
+      
+      // Sort by total walks (descending)
+      return leaderboard.sort((a, b) => b.totalWalks - a.totalWalks);
+    } catch (error) {
+      console.error("Error fetching next week leaderboard:", error);
+      return [];
     }
   }
 }
