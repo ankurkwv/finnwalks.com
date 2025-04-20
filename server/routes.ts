@@ -131,6 +131,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get the all-time leaderboard
+  app.get("/api/leaderboard/all-time", async (_req: Request, res: Response) => {
+    try {
+      const leaderboard = await storage.getLeaderboardAllTime();
+      return res.json(leaderboard);
+    } catch (error) {
+      console.error("Leaderboard fetch error:", error);
+      res.status(500).json({ error: "Failed to fetch leaderboard" });
+    }
+  });
+
+  // Get the next 7 days leaderboard
+  app.get("/api/leaderboard/next-week", async (req: Request, res: Response) => {
+    try {
+      const startDate = req.query.start as string || new Date().toISOString().split('T')[0];
+      
+      // Validate date format
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
+        return res.status(400).json({ error: "Invalid date format. Use YYYY-MM-DD" });
+      }
+
+      const leaderboard = await storage.getLeaderboardNextWeek(startDate);
+      return res.json(leaderboard);
+    } catch (error) {
+      console.error("Next week leaderboard fetch error:", error);
+      res.status(500).json({ error: "Failed to fetch next week leaderboard" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

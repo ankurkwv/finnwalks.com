@@ -3,10 +3,12 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import Schedule from '../components/Schedule';
 import InfoModal from '../components/InfoModal';
+import Leaderboard from '../components/Leaderboard';
 import { useSchedule } from '../hooks/useSchedule';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { formatDateShort } from '../lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '../hooks/use-mobile';
 
 const Home: React.FC = () => {
   // User info from local storage - will be set/updated in the booking modal now
@@ -19,6 +21,9 @@ const Home: React.FC = () => {
   // Date state for navigation
   const [currentStartDate, setCurrentStartDate] = useState<Date>(new Date());
   const { toast } = useToast();
+  
+  // Check if mobile device for responsive layout
+  const isMobile = useIsMobile();
   
   // Format the date to ISO string for API
   const startDateStr = currentStartDate.toISOString().split('T')[0];
@@ -79,24 +84,33 @@ const Home: React.FC = () => {
           </h2>
         </div>
         
-        {/* Schedule content */}
-        {isLoading ? (
-          <div className="flex justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+        <div className={`grid gap-6 ${isMobile ? '' : 'grid-cols-[1fr_350px]'}`}>
+          <div className="space-y-6">
+            {/* Schedule content */}
+            {isLoading ? (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+              </div>
+            ) : schedule ? (
+              <Schedule 
+                schedule={schedule} 
+                userName={userName} 
+                onUpdateUserName={setUserName}
+                userPhone={userPhone}
+                onUpdateUserPhone={setUserPhone}
+              />
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-gray-500">Unable to load schedule. Please try again.</p>
+              </div>
+            )}
           </div>
-        ) : schedule ? (
-          <Schedule 
-            schedule={schedule} 
-            userName={userName} 
-            onUpdateUserName={setUserName}
-            userPhone={userPhone}
-            onUpdateUserPhone={setUserPhone}
-          />
-        ) : (
-          <div className="text-center py-12">
-            <p className="text-gray-500">Unable to load schedule. Please try again.</p>
+          
+          {/* Leaderboard component - show on the side on desktop, below schedule on mobile */}
+          <div className={isMobile ? 'mt-6' : ''}>
+            <Leaderboard currentDate={startDateStr} />
           </div>
-        )}
+        </div>
       </main>
       
       <Footer />
