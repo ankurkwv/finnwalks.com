@@ -9,105 +9,73 @@ import { formatDate, getAvailableTimes } from '../lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { InsertSlot, Walker } from '@shared/schema';
 import PhoneInput from 'react-phone-number-input/input';
-import { useSearchWalkers } from '../hooks/useWalkers';
+import { useSearchWalkers, useWalker } from '../hooks/useWalkers';
 import { apiRequest } from '../lib/queryClient';
+import { Combobox } from '@/components/ui/combobox';
 
-// Walker Autocomplete component
-interface WalkerAutocompleteProps {
-  searchTerm: string;
-  onSelect: (walker: Walker) => void;
+// Custom combobox for walker name selection with phone number auto-population
+interface WalkerNameComboboxProps {
+  value: string;
+  onValueChange: (name: string, phone?: string) => void;
 }
 
-const WalkerAutocomplete: React.FC<WalkerAutocompleteProps> = ({ searchTerm, onSelect }) => {
-  // State for controlling dropdown visibility
-  const [showDropdown, setShowDropdown] = useState(false);
-  // Track when a selection has been made
-  const [selectionMade, setSelectionMade] = useState(false);
-  // Ref for detecting clicks outside the component
-  const wrapperRef = useRef<HTMLDivElement>(null);
+const WalkerNameCombobox: React.FC<WalkerNameComboboxProps> = ({ value, onValueChange }) => {
+  const [search, setSearch] = useState(value);
+  const [options, setOptions] = useState<{ value: string; label: string; extraInfo?: string; phone?: string }[]>([]);
+  const { data: walkers = [] } = useSearchWalkers(search);
   
-  // Debounced search query to limit API calls
-  const [debouncedQuery, setDebouncedQuery] = useState("");
-  const { data: walkers = [] } = useSearchWalkers(debouncedQuery);
-
-  // Handle outside clicks to close the dropdown
+  // Define a properly typed option structure
+  type ComboboxOption = {
+    value: string;
+    label: string;
+    extraInfo?: string;
+    phone?: string;
+  };
+  
+  // Update options whenever search results change
   useEffect(() => {
-    const handleOutsideClick = (event: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
-        setShowDropdown(false);
-      }
-    };
+    const newOptions: ComboboxOption[] = walkers.map((walker: Walker) => ({
+      value: walker.name,
+      label: walker.name,
+      extraInfo: walker.phone || undefined,
+      phone: walker.phone
+    }));
     
-    document.addEventListener('mousedown', handleOutsideClick);
-    return () => document.removeEventListener('mousedown', handleOutsideClick);
-  }, []);
-
-  // Debounce the search term and control dropdown visibility
-  useEffect(() => {
-    // Reset selection state when search term changes
-    if (selectionMade) {
-      setSelectionMade(false);
-      return; // Skip this effect cycle after selection
+    // If current value is not empty and not in the list, add it as an option
+    if (value && !walkers.some((w: Walker) => w.name === value)) {
+      newOptions.unshift({
+        value,
+        label: value,
+        phone: undefined
+      });
     }
     
-    // If search term is empty, hide dropdown
-    if (!searchTerm || searchTerm.trim().length === 0) {
-      setShowDropdown(false);
-      return;
-    }
-    
-    // Otherwise, set up debounce delay for search
+    setOptions(newOptions);
+  }, [walkers, value]);
+
+  // Debounced search handling to reduce API calls
+  useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedQuery(searchTerm);
-      // Show dropdown only if we have a search term
-      setShowDropdown(searchTerm.trim().length > 0);
+      setSearch(value);
     }, 300);
     
     return () => clearTimeout(timer);
-  }, [searchTerm, selectionMade]);
-  
-  // When walkers list changes, update dropdown visibility
-  useEffect(() => {
-    if (selectionMade) return;
-    
-    // Hide dropdown if we have no results
-    if (walkers.length === 0 && showDropdown) {
-      setShowDropdown(false);
-    }
-    // Show dropdown if we have results and a search term
-    else if (walkers.length > 0 && searchTerm && searchTerm.trim().length > 0) {
-      setShowDropdown(true);
-    }
-  }, [walkers, searchTerm, showDropdown, selectionMade]);
-
-  // Handler for selection
-  const handleSelection = (walker: Walker) => {
-    setSelectionMade(true);    // Mark that a selection was made
-    setShowDropdown(false);    // Hide dropdown immediately
-    onSelect(walker);          // Call parent handler
-  };
-  
-  // Don't render anything if dropdown should be hidden or no results
-  if (!showDropdown || walkers.length === 0) {
-    return null;
-  }
+  }, [value]);
   
   return (
-    <div 
-      ref={wrapperRef}
-      className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto"
-    >
-      {walkers.map((walker: Walker) => (
-        <div
-          key={walker.name}
-          className="px-4 py-2 cursor-pointer hover:bg-gray-100 flex justify-between"
-          onClick={() => handleSelection(walker)}
-        >
-          <span>{walker.name}</span>
-          {walker.phone && <span className="text-gray-500 text-sm">{walker.phone}</span>}
-        </div>
-      ))}
-    </div>
+    <Combobox
+      options={options}
+      value={value}
+      onChange={(selectedValue) => {
+        // Find the selected walker to get their phone
+        const selectedWalker = options.find(opt => opt.value === selectedValue);
+        onValueChange(selectedValue, selectedWalker?.phone);
+      }}
+      placeholder="Enter your name"
+      emptyText="No matching walkers found"
+      searchPlaceholder="Search for a name..."
+      className="w-full"
+    />
   );
 };
 
@@ -234,28 +202,15 @@ const BookingModal: React.FC<BookingModalProps> = ({
         <div className="space-y-4 py-4">
           <p className="text-gray-700">{formatDate(date)}</p>
           
-          <div className="space-y-2 relative">
+          <div className="space-y-2">
             <Label htmlFor="walker-name">Your Name</Label>
-            <Input
-              id="walker-name"
-              placeholder="Enter your name"
+            <WalkerNameCombobox 
               value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-              }}
-              autoComplete="off"
-              className="w-full"
-            />
-            <WalkerAutocomplete
-              searchTerm={name}
-              onSelect={(walker) => {
-                // When selecting from dropdown, update both name and phone if available
-                setName(walker.name);
-                if (walker.phone) {
-                  setPhone(walker.phone);
+              onValueChange={(newName: string, phoneNumber?: string) => {
+                setName(newName);
+                if (phoneNumber) {
+                  setPhone(phoneNumber);
                 }
-                // Force blur on the input to hide keyboard on mobile devices
-                document.getElementById('walker-name')?.blur();
               }}
             />
           </div>
