@@ -19,4 +19,9 @@
   body {
     @apply font-sans antialiased bg-background text-foreground;
   }
+  
+  /* Center content with max width */
+  .container {
+    @apply mx-auto max-w-[800px];
+  }
 }
