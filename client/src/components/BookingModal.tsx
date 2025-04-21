@@ -83,7 +83,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
     }
   }, [isOpen]);
 
-  // Reset form and focus appropriate element when modal opens
+  // Reset form when modal opens
   useEffect(() => {
     if (isOpen) {
       // Reset state values
@@ -91,22 +91,33 @@ const BookingModal: React.FC<BookingModalProps> = ({
       setNotes("");
       setName(userName); // Initialize with the stored name
       setPhone(userPhone); // Initialize with the stored phone
-      
-      // Give time for the modal to fully render
-      const timeoutId = setTimeout(() => {
-        // If user already has info in localStorage, focus on time selection
-        if (userName.trim() !== '') {
-          const timeSelect = document.getElementById("time");
-          if (timeSelect) {
-            timeSelect.click();
-          }
-        }
-      }, 50);
-      
-      // Clean up timeout
-      return () => clearTimeout(timeoutId);
     }
   }, [isOpen, userName, userPhone]);
+  
+  // Focus appropriate element after the modal opens
+  // This is separated to reduce complexity and potential timing issues
+  useEffect(() => {
+    // Only run this effect when the modal is actually open
+    if (!isOpen) return;
+    
+    // Give time for the modal to fully render and mount its contents
+    const timeoutId = setTimeout(() => {
+      // If user already has info in localStorage, focus on time selection
+      if (userName && userName.trim() !== '') {
+        console.log("Attempting to focus time selector");
+        const timeSelect = document.getElementById("time");
+        if (timeSelect) {
+          console.log("Found time selector, clicking it");
+          timeSelect.click();
+        } else {
+          console.log("Time selector not found");
+        }
+      }
+    }, 300); // Longer delay to ensure modal is completely rendered
+    
+    // Clean up timeout
+    return () => clearTimeout(timeoutId);
+  }, [isOpen, userName]);
 
   // Handle when a walker is selected from autocomplete
   const handleWalkerSelect = (walker: Walker) => {
