@@ -76,7 +76,7 @@ const Home: React.FC = () => {
         onInfoClick={() => setShowInfoModal(true)}
       />
       
-      <main className="flex-grow mx-auto px-4 py-6 max-w-[800px]">
+      <main className="flex-grow container mx-auto px-4 py-6">
         {/* Current date range display */}
         <div className="text-center mb-6">
           <h2 className="text-lg font-medium text-gray-700">
