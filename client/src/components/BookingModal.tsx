@@ -261,18 +261,22 @@ const BookingModal: React.FC<BookingModalProps> = ({
             <div className="space-y-2">
               <Label htmlFor="time">Select Time</Label>
               <Select value={selectedTime} onValueChange={handleTimeSelection}>
-                <SelectTrigger id="time">
+                <SelectTrigger id="time" className="h-12 text-base">
                   <SelectValue placeholder="Select a time" />
                 </SelectTrigger>
                 <SelectContent>
                   {availableTimes.length > 0 ? (
                     availableTimes.map((time) => (
-                      <SelectItem key={time.value} value={time.value}>
+                      <SelectItem 
+                        key={time.value} 
+                        value={time.value} 
+                        className="py-3 text-base"
+                      >
                         {time.label}
                       </SelectItem>
                     ))
                   ) : (
-                    <SelectItem value="none" disabled>
+                    <SelectItem value="none" disabled className="py-3 text-base">
                       No available times
                     </SelectItem>
                   )}
@@ -297,7 +301,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
           <DialogFooter>
             <Button
               type="submit"
-              className="w-full"
+              className="w-full py-6 text-base"
               disabled={
                 !selectedTime || !name.trim() || isSubmitting || isUpdatingWalker
               }
