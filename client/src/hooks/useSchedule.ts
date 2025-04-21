@@ -32,10 +32,21 @@ export function useAddSlot(): UseMutationResult<WalkingSlot, Error, InsertSlot> 
       // Get the current date from the new slot
       const { date } = newSlot;
       
-      // Update the cache directly while also triggering a background refresh
+      // Update the schedule cache directly while also triggering a background refresh
       queryClient.invalidateQueries({ 
         queryKey: ['/api/schedule'],
         // Refetch immediately to ensure UI updates
+        refetchType: 'active',
+      });
+      
+      // Also invalidate the leaderboard queries to reflect the new booking
+      queryClient.invalidateQueries({
+        queryKey: ['/api/leaderboard/all-time'],
+        refetchType: 'active',
+      });
+      
+      queryClient.invalidateQueries({
+        queryKey: ['/api/leaderboard/next-week'],
         refetchType: 'active',
       });
     },
@@ -56,6 +67,17 @@ export function useDeleteSlot(): UseMutationResult<void, Error, DeleteSlot> {
       queryClient.invalidateQueries({ 
         queryKey: ['/api/schedule'],
         // Refetch immediately to ensure UI updates
+        refetchType: 'active',
+      });
+      
+      // Also invalidate the leaderboard queries to reflect the canceled booking
+      queryClient.invalidateQueries({
+        queryKey: ['/api/leaderboard/all-time'],
+        refetchType: 'active',
+      });
+      
+      queryClient.invalidateQueries({
+        queryKey: ['/api/leaderboard/next-week'],
         refetchType: 'active',
       });
     },
