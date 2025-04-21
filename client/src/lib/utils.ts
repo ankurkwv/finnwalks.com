@@ -30,24 +30,38 @@ export function formatTimeRange(timeStr: string): string {
   return formatTime(timeStr);
 }
 
-// Format date
+// Format date, ensuring timezone doesn't affect date display
 export function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("en-US", {
+  // Parse the YYYY-MM-DD format manually to avoid timezone issues
+  const [year, month, day] = dateStr.split('-').map(Number);
+  
+  // Create date with specific year, month, day using UTC to avoid timezone effects
+  // Month is 0-indexed in JS Date
+  const date = new Date(Date.UTC(year, month - 1, day));
+  
+  return date.toLocaleDateString("en-US", {
     weekday: "long",
     month: "long",
     day: "numeric",
   });
 }
 
-// Format date with short month
+// Format date with short month, avoiding timezone issues
 export function formatDateShort(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("en-US", {
+  // Parse the YYYY-MM-DD format manually
+  const [year, month, day] = dateStr.split('-').map(Number);
+  
+  // Create date with specific year, month, day using UTC to avoid timezone effects
+  // Month is 0-indexed in JS Date
+  const date = new Date(Date.UTC(year, month - 1, day));
+  
+  return date.toLocaleDateString("en-US", {
     month: "long",
     day: "numeric",
   });
 }
 
-// Generate a range of dates
+// Generate a range of dates without timezone issues
 export function generateDateRange(startDate: Date, days: number): string[] {
   const dates: string[] = [];
   const start = new Date(startDate);
@@ -55,7 +69,13 @@ export function generateDateRange(startDate: Date, days: number): string[] {
   for (let i = 0; i < days; i++) {
     const date = new Date(start);
     date.setDate(date.getDate() + i);
-    dates.push(date.toISOString().split("T")[0]);
+    
+    // Format as YYYY-MM-DD to avoid timezone issues
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    
+    dates.push(`${year}-${month}-${day}`);
   }
   
   return dates;

@@ -25,8 +25,8 @@ const Home: React.FC = () => {
   // Check if mobile device for responsive layout
   const isMobile = useIsMobile();
   
-  // Format the date to ISO string for API
-  const startDateStr = currentStartDate.toISOString().split('T')[0];
+  // Format the date to YYYY-MM-DD for API, preserving the actual date without timezone shifts
+  const startDateStr = `${currentStartDate.getFullYear()}-${String(currentStartDate.getMonth() + 1).padStart(2, '0')}-${String(currentStartDate.getDate()).padStart(2, '0')}`;
   
   // Fetch schedule data with auto-refresh and unique query key per date
   const { data: schedule, isLoading, error } = useSchedule(startDateStr);
@@ -53,7 +53,10 @@ const Home: React.FC = () => {
     const endDate = new Date(currentStartDate);
     endDate.setDate(endDate.getDate() + 6);
     
-    return `${formatDateShort(startDateStr)} - ${formatDateShort(endDate.toISOString().split('T')[0])}`;
+    // Format end date in same way as start date to avoid timezone issues
+    const endDateStr = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
+    
+    return `${formatDateShort(startDateStr)} - ${formatDateShort(endDateStr)}`;
   };
   
   // Show error toast if fetch fails
