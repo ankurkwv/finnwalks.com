@@ -60,8 +60,20 @@ const WalkerNameAutocomplete: React.FC<WalkerNameAutocompleteProps> = ({
   // Handle input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
+    const oldValue = value;
     onChange(newValue);
     setIsOpen(true);
+    
+    // If input was empty and now has a value (likely from autofill)
+    // then focus on the phone field
+    if (!oldValue && newValue && newValue.length > 1) {
+      setTimeout(() => {
+        const phoneInput = document.getElementById("walker-phone");
+        if (phoneInput) {
+          phoneInput.focus();
+        }
+      }, 100);
+    }
   };
 
   // Handle selection from dropdown
@@ -81,6 +93,9 @@ const WalkerNameAutocomplete: React.FC<WalkerNameAutocompleteProps> = ({
         onFocus={() => setIsOpen(true)}
         className="w-full"
         data-testid="walker-name-input"
+        name="name"
+        autoComplete="name"
+        id="walker-name"
       />
 
       {/* Dropdown menu */}

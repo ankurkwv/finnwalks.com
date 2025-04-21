@@ -237,7 +237,20 @@ const BookingModal: React.FC<BookingModalProps> = ({
                   autoComplete="tel"
                   placeholder="(555) 555-5555"
                   value={phone}
-                  onChange={(value) => setPhone(value || "")}
+                  onChange={(value) => {
+                    setPhone(value || "");
+                    
+                    // If phone was empty and now has a value (likely from autofill)
+                    // then focus on the time selector
+                    if (!phone && value) {
+                      setTimeout(() => {
+                        const timeSelect = document.getElementById("time");
+                        if (timeSelect) {
+                          timeSelect.click();
+                        }
+                      }, 100);
+                    }
+                  }}
                   className="w-full focus:outline-none"
                   country="US"
                   style={{ border: "none", width: "100%", height: "24px" }}
