@@ -83,31 +83,30 @@ const BookingModal: React.FC<BookingModalProps> = ({
     }
   }, [isOpen]);
 
-  // Reset form and initialize name and phone when modal opens
+  // Reset form and focus appropriate element when modal opens
   useEffect(() => {
     if (isOpen) {
+      // Reset state values
       setSelectedTime("");
       setNotes("");
       setName(userName); // Initialize with the stored name
       setPhone(userPhone); // Initialize with the stored phone
+      
+      // Give time for the modal to fully render
+      const timeoutId = setTimeout(() => {
+        // If user already has info in localStorage, focus on time selection
+        if (userName.trim() !== '') {
+          const timeSelect = document.getElementById("time");
+          if (timeSelect) {
+            timeSelect.click();
+          }
+        }
+      }, 50);
+      
+      // Clean up timeout
+      return () => clearTimeout(timeoutId);
     }
   }, [isOpen, userName, userPhone]);
-  
-  // Determine what element should receive initial focus
-  const initialFocusRef = React.useRef<HTMLElement | null>(null);
-  
-  // Set the initial focus element based on whether user info exists
-  useEffect(() => {
-    if (isOpen) {
-      if (userName.trim() !== '') {
-        // User info exists, focus should go to time select
-        initialFocusRef.current = document.getElementById("time");
-      } else {
-        // No user info, focus should go to name input (default behavior)
-        initialFocusRef.current = null;
-      }
-    }
-  }, [isOpen, userName]);
 
   // Handle when a walker is selected from autocomplete
   const handleWalkerSelect = (walker: Walker) => {
@@ -226,17 +225,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
     <Dialog 
       open={isOpen} 
       onOpenChange={(open) => !open && onClose()}
-      // Use initialFocusRef to control which element gets focused when the dialog opens
-      onOpenAutoFocus={(event) => {
-        if (initialFocusRef.current) {
-          event.preventDefault();
-          initialFocusRef.current.focus();
-          // For select elements, we need to trigger a click to open the dropdown
-          if (initialFocusRef.current.id === "time") {
-            initialFocusRef.current.click();
-          }
-        }
-      }}
     >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
