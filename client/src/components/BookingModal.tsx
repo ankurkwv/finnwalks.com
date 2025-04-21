@@ -90,6 +90,16 @@ const BookingModal: React.FC<BookingModalProps> = ({
       setNotes("");
       setName(userName); // Initialize with the stored name
       setPhone(userPhone); // Initialize with the stored phone
+      
+      // If user info is already in local storage, focus on time selection
+      if (userName.trim() !== '') {
+        setTimeout(() => {
+          const timeSelect = document.getElementById("time");
+          if (timeSelect) {
+            timeSelect.click();
+          }
+        }, 300); // Slight delay to ensure modal is fully open
+      }
     }
   }, [isOpen, userName, userPhone]);
 
