@@ -212,92 +212,87 @@ const BookingModal: React.FC<BookingModalProps> = ({
         <DialogHeader>
           <DialogTitle>{formatDate(date)}</DialogTitle>
         </DialogHeader>
-        <DialogHeader>
-          <DialogTitle>{formatDate(date)}</DialogTitle>
-        </DialogHeader>
-        <DialogHeader>
-          <DialogTitle>{formatDate(date)}</DialogTitle>
-        </DialogHeader>
-        <DialogHeader>
-          <DialogTitle>{formatDate(date)}</DialogTitle>
-        </DialogHeader>
 
-        <div className="space-y-2 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="walker-name">Your Name</Label>
-            <WalkerNameAutocomplete
-              value={name}
-              onChange={setName}
-              onWalkerSelect={handleWalkerSelect}
-              placeholder="Start typing your name..."
-              className="w-full"
-              walkers={allWalkers}
-              isLoading={isLoadingWalkers}
-            />
-          </div>
+        <form autoComplete="on" onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+          <div className="space-y-2 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="walker-name">Your Name</Label>
+              <WalkerNameAutocomplete
+                value={name}
+                onChange={setName}
+                onWalkerSelect={handleWalkerSelect}
+                placeholder="Start typing your name..."
+                className="w-full"
+                walkers={allWalkers}
+                isLoading={isLoadingWalkers}
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="walker-phone">Phone Number</Label>
-            <div className="phone-input-container border rounded-md p-2 flex items-center bg-white">
-              <PhoneInput
-                id="walker-phone"
-                placeholder="(555) 555-5555"
-                value={phone}
-                onChange={(value) => setPhone(value || "")}
-                className="w-full focus:outline-none"
-                country="US"
-                style={{ border: "none", width: "100%", height: "24px" }}
+            <div className="space-y-2">
+              <Label htmlFor="walker-phone">Phone Number</Label>
+              <div className="phone-input-container border rounded-md p-2 flex items-center bg-white">
+                <PhoneInput
+                  id="walker-phone"
+                  name="tel"
+                  autoComplete="tel"
+                  placeholder="(555) 555-5555"
+                  value={phone}
+                  onChange={(value) => setPhone(value || "")}
+                  className="w-full focus:outline-none"
+                  country="US"
+                  style={{ border: "none", width: "100%", height: "24px" }}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="time">Select Time</Label>
+              <Select value={selectedTime} onValueChange={handleTimeSelection}>
+                <SelectTrigger id="time">
+                  <SelectValue placeholder="Select a time" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableTimes.length > 0 ? (
+                    availableTimes.map((time) => (
+                      <SelectItem key={time.value} value={time.value}>
+                        {time.label}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="none" disabled>
+                      No available times
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="notes">
+                Notes (where do you plan to take him, how long, etc?)
+              </Label>
+              <Textarea
+                id="notes"
+                placeholder="e.g., Taking him to Cato for an hour"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="h-24 resize-none"
               />
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="time">Select Time</Label>
-            <Select value={selectedTime} onValueChange={handleTimeSelection}>
-              <SelectTrigger id="time">
-                <SelectValue placeholder="Select a time" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableTimes.length > 0 ? (
-                  availableTimes.map((time) => (
-                    <SelectItem key={time.value} value={time.value}>
-                      {time.label}
-                    </SelectItem>
-                  ))
-                ) : (
-                  <SelectItem value="none" disabled>
-                    No available times
-                  </SelectItem>
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="notes">
-              Notes (where do you plan to take him, how long, etc?)
-            </Label>
-            <Textarea
-              id="notes"
-              placeholder="e.g., Taking him to Cato for an hour"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="h-24 resize-none"
-            />
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button
-            className="w-full"
-            onClick={handleSubmit}
-            disabled={
-              !selectedTime || !name.trim() || isSubmitting || isUpdatingWalker
-            }
-          >
-            {isSubmitting || isUpdatingWalker ? "Booking..." : "Book Walk"}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={
+                !selectedTime || !name.trim() || isSubmitting || isUpdatingWalker
+              }
+            >
+              {isSubmitting || isUpdatingWalker ? "Booking..." : "Book Walk"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
