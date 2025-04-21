@@ -1,4 +1,4 @@
-import { pgTable, text, varchar, serial, integer, primaryKey } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, serial, integer, primaryKey, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -17,6 +17,18 @@ export const walkerColors = pgTable('walker_colors', {
   name: text('name').primaryKey(),                 // Walker's name
   colorIndex: integer('color_index').notNull(),    // Color index (0-9)
   phone: text('phone'),                            // Walker's phone number (E.164 format)
+});
+
+// SMS audit table to prevent duplicate messages
+export const smsAuditLog = pgTable('sms_audit_log', {
+  id: serial('id').primaryKey(),
+  messageHash: text('message_hash').notNull(),     // Hash of recipient + message content
+  recipient: text('recipient').notNull(),          // SMS recipient
+  messageType: text('message_type').notNull(),     // Type of message (booking, cancellation)
+  messageContent: text('message_content').notNull(), // The actual message content
+  slotDate: varchar('slot_date', { length: 10 }), // Related walking slot date
+  slotTime: varchar('slot_time', { length: 4 }),  // Related walking slot time
+  sentAt: timestamp('sent_at').defaultNow().notNull(), // When the SMS was sent
 });
 
 // WalkingSlot type matches the database schema
@@ -62,3 +74,26 @@ export type Walker = {
   colorIndex: number;
   phone?: string;
 };
+
+// SMS Audit type definitions
+export type SmsAuditRecord = {
+  id: number;
+  messageHash: string;
+  recipient: string;
+  messageType: string;
+  messageContent: string;
+  slotDate?: string;
+  slotTime?: string;
+  sentAt: Date;
+};
+
+export const insertSmsAuditSchema = z.object({
+  messageHash: z.string(),
+  recipient: z.string(),
+  messageType: z.string(),
+  messageContent: z.string(),
+  slotDate: z.string().optional(),
+  slotTime: z.string().optional(),
+});
+
+export type InsertSmsAudit = z.infer<typeof insertSmsAuditSchema>;
