@@ -248,7 +248,7 @@ const Schedule: React.FC<ScheduleProps> = ({
                         className="mt-2 text-finn-primary"
                       >
                         <PlusIcon className="h-4 w-4 mr-1" />
-                        Schedule a walk
+                        Add a walk
                       </Button>
                     </CardContent>
                   </Card>

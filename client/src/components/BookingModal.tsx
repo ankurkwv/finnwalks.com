@@ -18,7 +18,11 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { formatDate, getAvailableTimes, capitalizeFullName } from "../lib/utils";
+import {
+  formatDate,
+  getAvailableTimes,
+  capitalizeFullName,
+} from "../lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { InsertSlot, Walker } from "@shared/schema";
 import PhoneInput from "react-phone-number-input/input";
@@ -60,18 +64,18 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
   // Available times for this day
   const availableTimes = getAvailableTimes(bookedTimes);
-  
+
   // Pre-fetch all walkers when modal opens
   useEffect(() => {
     if (isOpen) {
       setIsLoadingWalkers(true);
-      fetch('/api/walkers/search')
-        .then(res => res.json())
-        .then(walkers => {
+      fetch("/api/walkers/search")
+        .then((res) => res.json())
+        .then((walkers) => {
           setAllWalkers(walkers || []);
         })
-        .catch(err => {
-          console.error('Error pre-fetching walkers:', err);
+        .catch((err) => {
+          console.error("Error pre-fetching walkers:", err);
         })
         .finally(() => {
           setIsLoadingWalkers(false);
@@ -95,7 +99,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
     if (walker.phone) {
       setPhone(walker.phone);
     }
-    
+
     // Auto-focus on time picker after name selection
     const timeSelect = document.getElementById("time");
     if (timeSelect) {
@@ -108,10 +112,10 @@ const BookingModal: React.FC<BookingModalProps> = ({
   // Handle time selection and auto-focus notes
   const handleTimeSelection = (value: string) => {
     setSelectedTime(value);
-    
+
     // Auto-focus on notes field after time selection
     setTimeout(() => {
-      const notesField = document.getElementById('notes');
+      const notesField = document.getElementById("notes");
       if (notesField) {
         notesField.focus();
       }
@@ -124,7 +128,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
     try {
       setIsUpdatingWalker(true);
-      
+
       // Properly capitalize the name
       const capitalizedName = capitalizeFullName(name.trim());
 
@@ -167,7 +171,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
     // Capitalize the name properly
     const capitalizedName = capitalizeFullName(name.trim());
-    
+
     // Update the user name in localStorage if it changed (with proper capitalization)
     if (capitalizedName !== userName) {
       onUpdateUserName(capitalizedName);
@@ -188,7 +192,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
       });
       return;
     }
-    
+
     // Update walker info in database with properly capitalized name
     await updateWalkerInfo();
 
@@ -206,10 +210,16 @@ const BookingModal: React.FC<BookingModalProps> = ({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Book a Walk on {formatDate(date)}</DialogTitle>
-          <DialogDescription>
-            Fill in the details to book your dog walk
-          </DialogDescription>
+          <DialogTitle>{formatDate(date)}</DialogTitle>
+        </DialogHeader>
+        <DialogHeader>
+          <DialogTitle>{formatDate(date)}</DialogTitle>
+        </DialogHeader>
+        <DialogHeader>
+          <DialogTitle>{formatDate(date)}</DialogTitle>
+        </DialogHeader>
+        <DialogHeader>
+          <DialogTitle>{formatDate(date)}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-2 py-4">
