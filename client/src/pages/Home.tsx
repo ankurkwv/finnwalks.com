@@ -84,9 +84,10 @@ const Home: React.FC = () => {
           </h2>
         </div>
         
-        <div className={`grid gap-6 ${isMobile ? '' : 'grid-cols-[1fr_350px]'}`}>
-          <div className="space-y-6">
-            {/* Schedule content */}
+        {/* Container with max width to make the layout more like mobile */}
+        <div className="mx-auto max-w-md">
+          {/* Schedule section */}
+          <div className="space-y-6 mb-6">
             {isLoading ? (
               <div className="flex justify-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
@@ -106,8 +107,8 @@ const Home: React.FC = () => {
             )}
           </div>
           
-          {/* Leaderboard component - show on the side on desktop, below schedule on mobile */}
-          <div className={isMobile ? 'mt-6' : ''}>
+          {/* Leaderboard component - always below schedule */}
+          <div className="mt-6">
             <Leaderboard currentDate={startDateStr} />
           </div>
         </div>
