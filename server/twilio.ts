@@ -1,18 +1,13 @@
 import { WalkingSlot, smsAuditLog, InsertSmsAudit } from "@shared/schema";
-import { formatTime } from "../client/src/lib/utils";
+import { formatTime, formatDate as clientFormatDate } from "../client/src/lib/utils";
 import twilio from 'twilio';
 import crypto from 'crypto';
 import { eq } from 'drizzle-orm';
 import { db } from './db';
 
-// Format date to a more readable format
+// Use the same date formatting as the client to maintain consistency
 function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric'
-  });
+  return clientFormatDate(dateStr);
 }
 
 /**
