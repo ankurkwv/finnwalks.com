@@ -6,7 +6,12 @@ import InfoModal from '../components/InfoModal';
 import Leaderboard from '../components/Leaderboard';
 import { useSchedule } from '../hooks/useSchedule';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import { formatDateShort } from '../lib/utils';
+import { 
+  formatDateShort, 
+  getCurrentDateET, 
+  toDateString, 
+  fromDateString 
+} from '../lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '../hooks/use-mobile';
 
@@ -18,42 +23,45 @@ const Home: React.FC = () => {
   // Info modal state
   const [showInfoModal, setShowInfoModal] = useState<boolean>(false);
   
-  // Date state for navigation
-  const [currentStartDate, setCurrentStartDate] = useState<Date>(new Date());
+  // Initialize with the current date in ET timezone as a string
+  const [currentStartDateStr, setCurrentStartDateStr] = useState<string>(getCurrentDateET());
   const { toast } = useToast();
   
   // Check if mobile device for responsive layout
   const isMobile = useIsMobile();
   
-  // Format the date to ISO string for API
-  const startDateStr = currentStartDate.toISOString().split('T')[0];
-  
   // Fetch schedule data with auto-refresh and unique query key per date
-  const { data: schedule, isLoading, error } = useSchedule(startDateStr);
+  const { data: schedule, isLoading, error } = useSchedule(currentStartDateStr);
   
   // Handle date navigation
   const goToPreviousWeek = () => {
-    const newDate = new Date(currentStartDate);
-    newDate.setDate(newDate.getDate() - 7);
-    setCurrentStartDate(newDate);
+    // Convert string date to Date object, modify it, then back to string
+    const currentDate = fromDateString(currentStartDateStr);
+    currentDate.setDate(currentDate.getDate() - 7);
+    setCurrentStartDateStr(toDateString(currentDate));
   };
   
   const goToNextWeek = () => {
-    const newDate = new Date(currentStartDate);
-    newDate.setDate(newDate.getDate() + 7);
-    setCurrentStartDate(newDate);
+    // Convert string date to Date object, modify it, then back to string
+    const currentDate = fromDateString(currentStartDateStr);
+    currentDate.setDate(currentDate.getDate() + 7);
+    setCurrentStartDateStr(toDateString(currentDate));
   };
   
   const goToToday = () => {
-    setCurrentStartDate(new Date());
+    // Reset to current date in ET timezone
+    setCurrentStartDateStr(getCurrentDateET());
   };
   
   // Generate date range display text
   const getDateRangeText = () => {
-    const endDate = new Date(currentStartDate);
+    // Calculate end date (current + 6 days)
+    const currentDate = fromDateString(currentStartDateStr);
+    const endDate = new Date(currentDate);
     endDate.setDate(endDate.getDate() + 6);
+    const endDateStr = toDateString(endDate);
     
-    return `${formatDateShort(startDateStr)} - ${formatDateShort(endDate.toISOString().split('T')[0])}`;
+    return `${formatDateShort(currentStartDateStr)} - ${formatDateShort(endDateStr)}`;
   };
   
   // Show error toast if fetch fails
@@ -109,7 +117,7 @@ const Home: React.FC = () => {
           
           {/* Leaderboard component - always below schedule */}
           <div className="mt-6">
-            <Leaderboard currentDate={startDateStr} />
+            <Leaderboard currentDate={currentStartDateStr} />
           </div>
         </div>
       </main>

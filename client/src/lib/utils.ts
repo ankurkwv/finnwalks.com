@@ -30,18 +30,56 @@ export function formatTimeRange(timeStr: string): string {
   return formatTime(timeStr);
 }
 
-// Format date
+/**
+ * Convert a Date to a YYYY-MM-DD date string in ET timezone
+ * This ensures consistency in date handling throughout the application
+ */
+export function toDateString(date: Date): string {
+  // Create a formatter that will output the date in ET timezone
+  const options: Intl.DateTimeFormatOptions = { 
+    year: 'numeric', 
+    month: '2-digit', 
+    day: '2-digit',
+    timeZone: 'America/New_York' // Eastern Time
+  };
+  
+  // Get the YYYY-MM-DD format in ET timezone
+  const formatted = new Intl.DateTimeFormat('fr-CA', options).format(date);
+  return formatted; // returns YYYY-MM-DD format
+}
+
+/**
+ * Get the current date in ET timezone as a YYYY-MM-DD string
+ */
+export function getCurrentDateET(): string {
+  return toDateString(new Date());
+}
+
+/**
+ * Generate a Date object from a YYYY-MM-DD string
+ * This will create a date at midnight in the local timezone
+ */
+export function fromDateString(dateStr: string): Date {
+  const [year, month, day] = dateStr.split('-').map(num => parseInt(num));
+  return new Date(year, month - 1, day); // month is 0-indexed in JS Date
+}
+
+// Format date for display
 export function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("en-US", {
+  // For display formatting, use the browser's timezone which is what the user sees
+  const date = fromDateString(dateStr);
+  return date.toLocaleDateString("en-US", {
     weekday: "long",
     month: "long",
     day: "numeric",
   });
 }
 
-// Format date with short month
+// Format date with short month for display
 export function formatDateShort(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("en-US", {
+  // For display formatting, use the browser's timezone which is what the user sees
+  const date = fromDateString(dateStr);
+  return date.toLocaleDateString("en-US", {
     month: "long",
     day: "numeric",
   });
@@ -55,7 +93,7 @@ export function generateDateRange(startDate: Date, days: number): string[] {
   for (let i = 0; i < days; i++) {
     const date = new Date(start);
     date.setDate(date.getDate() + i);
-    dates.push(date.toISOString().split("T")[0]);
+    dates.push(toDateString(date));
   }
   
   return dates;

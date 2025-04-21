@@ -1,15 +1,30 @@
-import express, { type Express, Request, Response } from "express";
+import express, { type Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertSlotSchema, deleteSlotSchema } from "@shared/schema";
 import { sendSmsNotification } from "./twilio";
 import { ZodError } from "zod";
 
+/**
+ * Get current date in Eastern Time (ET) as YYYY-MM-DD
+ */
+function getCurrentDateET(): string {
+  const options: Intl.DateTimeFormatOptions = { 
+    year: 'numeric', 
+    month: '2-digit', 
+    day: '2-digit',
+    timeZone: 'America/New_York' // Eastern Time
+  };
+  
+  return new Intl.DateTimeFormat('fr-CA', options).format(new Date());
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Get schedule for a week
   app.get("/api/schedule", async (req: Request, res: Response) => {
     try {
-      const startDate = req.query.start as string || new Date().toISOString().split('T')[0];
+      // If no start date is provided, default to today in ET timezone
+      let startDate = req.query.start as string || getCurrentDateET();
       
       // Validate date format
       if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
@@ -145,7 +160,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get the next 7 days leaderboard
   app.get("/api/leaderboard/next-week", async (req: Request, res: Response) => {
     try {
-      const startDate = req.query.start as string || new Date().toISOString().split('T')[0];
+      // If no start date is provided, default to today in ET timezone
+      let startDate = req.query.start as string || getCurrentDateET();
       
       // Validate date format
       if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
