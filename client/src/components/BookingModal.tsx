@@ -192,6 +192,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
     // Update walker info in database with properly capitalized name
     await updateWalkerInfo();
 
+    // Submit the booking with the capitalized name
     onSubmit({
       date,
       time: selectedTime,
