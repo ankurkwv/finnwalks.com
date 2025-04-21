@@ -14,48 +14,48 @@ const Home: React.FC = () => {
   // User info from local storage - will be set/updated in the booking modal now
   const [userName, setUserName] = useLocalStorage<string>('userName', '');
   const [userPhone, setUserPhone] = useLocalStorage<string>('userPhone', '');
-  
+
   // Info modal state
   const [showInfoModal, setShowInfoModal] = useState<boolean>(false);
-  
+
   // Date state for navigation
   const [currentStartDate, setCurrentStartDate] = useState<Date>(new Date());
   const { toast } = useToast();
-  
+
   // Check if mobile device for responsive layout
   const isMobile = useIsMobile();
-  
+
   // Format the date to ISO string for API
   const startDateStr = currentStartDate.toISOString().split('T')[0];
-  
+
   // Fetch schedule data with auto-refresh and unique query key per date
   const { data: schedule, isLoading, error } = useSchedule(startDateStr);
-  
+
   // Handle date navigation
   const goToPreviousWeek = () => {
     const newDate = new Date(currentStartDate);
     newDate.setDate(newDate.getDate() - 7);
     setCurrentStartDate(newDate);
   };
-  
+
   const goToNextWeek = () => {
     const newDate = new Date(currentStartDate);
     newDate.setDate(newDate.getDate() + 7);
     setCurrentStartDate(newDate);
   };
-  
+
   const goToToday = () => {
     setCurrentStartDate(new Date());
   };
-  
+
   // Generate date range display text
   const getDateRangeText = () => {
     const endDate = new Date(currentStartDate);
     endDate.setDate(endDate.getDate() + 6);
-    
+
     return `${formatDateShort(startDateStr)} - ${formatDateShort(endDate.toISOString().split('T')[0])}`;
   };
-  
+
   // Show error toast if fetch fails
   useEffect(() => {
     if (error) {
@@ -66,7 +66,7 @@ const Home: React.FC = () => {
       });
     }
   }, [error, toast]);
-  
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <Header
@@ -75,7 +75,7 @@ const Home: React.FC = () => {
         onToday={goToToday}
         onInfoClick={() => setShowInfoModal(true)}
       />
-      
+
       <main className="flex-grow container mx-auto px-4 py-6">
         {/* Current date range display */}
         <div className="text-center mb-6">
@@ -83,38 +83,40 @@ const Home: React.FC = () => {
             {getDateRangeText()}
           </h2>
         </div>
-        
-        <div className={`grid gap-6 ${isMobile ? '' : 'grid-cols-[1fr_350px]'}`}>
-          <div className="space-y-6">
-            {/* Schedule content */}
-            {isLoading ? (
-              <div className="flex justify-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
-              </div>
-            ) : schedule ? (
-              <Schedule 
-                schedule={schedule} 
-                userName={userName} 
-                onUpdateUserName={setUserName}
-                userPhone={userPhone}
-                onUpdateUserPhone={setUserPhone}
-              />
-            ) : (
-              <div className="text-center py-12">
-                <p className="text-gray-500">Unable to load schedule. Please try again.</p>
-              </div>
-            )}
-          </div>
-          
-          {/* Leaderboard component - show on the side on desktop, below schedule on mobile */}
-          <div className={isMobile ? 'mt-6' : ''}>
-            <Leaderboard currentDate={startDateStr} />
+
+        <div className="mx-auto max-w-[800px] w-full">
+          <div className={`grid gap-6 ${isMobile ? '' : 'grid-cols-[1fr_350px]'}`}>
+            <div className="space-y-6">
+              {/* Schedule content */}
+              {isLoading ? (
+                <div className="flex justify-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+                </div>
+              ) : schedule ? (
+                <Schedule 
+                  schedule={schedule} 
+                  userName={userName} 
+                  onUpdateUserName={setUserName}
+                  userPhone={userPhone}
+                  onUpdateUserPhone={setUserPhone}
+                />
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-gray-500">Unable to load schedule. Please try again.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Leaderboard component - show on the side on desktop, below schedule on mobile */}
+            <div className={isMobile ? 'mt-6' : ''}>
+              <Leaderboard currentDate={startDateStr} />
+            </div>
           </div>
         </div>
       </main>
-      
+
       <Footer />
-      
+
       {/* Modals */}
       <InfoModal 
         isOpen={showInfoModal} 
