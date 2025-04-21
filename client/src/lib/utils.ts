@@ -6,6 +6,15 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+// Capitalize a full name properly
+export function capitalizeFullName(name: string): string {
+  if (!name) return '';
+  
+  return name.split(' ')
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ');
+}
+
 // Format time from HHMM to 12-hour format
 export function formatTime(timeStr: string): string {
   const hour = parseInt(timeStr.substring(0, 2));

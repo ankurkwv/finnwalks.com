@@ -18,7 +18,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { formatDate, getAvailableTimes } from "../lib/utils";
+import { formatDate, getAvailableTimes, capitalizeFullName } from "../lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { InsertSlot, Walker } from "@shared/schema";
 import PhoneInput from "react-phone-number-input/input";
@@ -124,15 +124,18 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
     try {
       setIsUpdatingWalker(true);
+      
+      // Properly capitalize the name
+      const capitalizedName = capitalizeFullName(name.trim());
 
-      // Call the API to update walker info
+      // Call the API to update walker info with capitalized name
       await fetch("/api/walkers/update", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          name: name.trim(),
+          name: capitalizedName,
           phone: phone || undefined,
         }),
       });
@@ -162,9 +165,12 @@ const BookingModal: React.FC<BookingModalProps> = ({
       return;
     }
 
-    // Update the user name in localStorage if it changed
-    if (name.trim() !== userName) {
-      onUpdateUserName(name.trim());
+    // Capitalize the name properly
+    const capitalizedName = capitalizeFullName(name.trim());
+    
+    // Update the user name in localStorage if it changed (with proper capitalization)
+    if (capitalizedName !== userName) {
+      onUpdateUserName(capitalizedName);
     }
 
     // Update the user phone in localStorage if it changed
@@ -182,14 +188,14 @@ const BookingModal: React.FC<BookingModalProps> = ({
       });
       return;
     }
-
-    // Update walker info in database
+    
+    // Update walker info in database with properly capitalized name
     await updateWalkerInfo();
 
     onSubmit({
       date,
       time: selectedTime,
-      name: name.trim(),
+      name: capitalizedName,
       phone: phone || undefined,
       notes: notes.trim() || undefined,
     });
