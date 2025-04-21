@@ -20,9 +20,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
-        <div className="mx-auto max-w-[800px]">
-          <Router />
-        </div>
+        <Router />
       </TooltipProvider>
     </QueryClientProvider>
   );
