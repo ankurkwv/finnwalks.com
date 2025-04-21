@@ -90,18 +90,24 @@ const BookingModal: React.FC<BookingModalProps> = ({
       setNotes("");
       setName(userName); // Initialize with the stored name
       setPhone(userPhone); // Initialize with the stored phone
-      
-      // If user info is already in local storage, focus on time selection
-      if (userName.trim() !== '') {
-        setTimeout(() => {
-          const timeSelect = document.getElementById("time");
-          if (timeSelect) {
-            timeSelect.click();
-          }
-        }, 300); // Slight delay to ensure modal is fully open
-      }
     }
   }, [isOpen, userName, userPhone]);
+  
+  // Determine what element should receive initial focus
+  const initialFocusRef = React.useRef<HTMLElement | null>(null);
+  
+  // Set the initial focus element based on whether user info exists
+  useEffect(() => {
+    if (isOpen) {
+      if (userName.trim() !== '') {
+        // User info exists, focus should go to time select
+        initialFocusRef.current = document.getElementById("time");
+      } else {
+        // No user info, focus should go to name input (default behavior)
+        initialFocusRef.current = null;
+      }
+    }
+  }, [isOpen, userName]);
 
   // Handle when a walker is selected from autocomplete
   const handleWalkerSelect = (walker: Walker) => {
@@ -217,7 +223,21 @@ const BookingModal: React.FC<BookingModalProps> = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog 
+      open={isOpen} 
+      onOpenChange={(open) => !open && onClose()}
+      // Use initialFocusRef to control which element gets focused when the dialog opens
+      onOpenAutoFocus={(event) => {
+        if (initialFocusRef.current) {
+          event.preventDefault();
+          initialFocusRef.current.focus();
+          // For select elements, we need to trigger a click to open the dropdown
+          if (initialFocusRef.current.id === "time") {
+            initialFocusRef.current.click();
+          }
+        }
+      }}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{formatDate(date)}</DialogTitle>
