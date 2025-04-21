@@ -1,0 +1,76 @@
+iOS (Safari/WebKit) will only offer to autofill a phone number when all of the following are true:
+
+There’s a real <input type="tel"> in a <form> with browser autofill enabled.
+
+That <input> has a name (or at least an autocomplete) attribute specifying that it’s a telephone field.
+
+Your own contact card is selected in Settings → Siri & Search → My Information.
+
+By default, react-phone-number-input/input renders a native <input type="tel"> (so the type is correct), but:
+
+It does not set any name or autocomplete attributes for you.
+
+You’re not wrapping it in a <form> with autofill enabled, so Safari never hooks into your modal’s fields.
+
+1. Wrap in a real <form> with autoComplete="on"
+Currently you’re just rendering <DialogContent> and intercepting clicks manually. Instead, use a <form>:
+
+tsx
+Copy
+Edit
+<DialogContent className="sm:max-w-md">
+  <form onSubmit={handleSubmit} autoComplete="on">
+    {/* … your fields … */}
+    <div className="space-y-2">
+      <Label htmlFor="walker-phone">Phone Number</Label>
+      <div className="phone-input-container border rounded-md p-2 flex items-center bg-white">
+        <PhoneInput
+          id="walker-phone"
+          name="tel"                    // ← crucial
+          autoComplete="tel"            // ← crucial
+          placeholder="(555) 555-5555"
+          value={phone}
+          onChange={(value) => setPhone(value || "")}
+          className="w-full focus:outline-none"
+          country="US"
+          style={{ border: "none", width: "100%", height: "24px" }}
+        />
+      </div>
+    </div>
+
+    <Button type="submit">Book Walk</Button>
+  </form>
+</DialogContent>
+Why this matters
+• Browsers only autofill fields inside a <form> marked eligible for autocomplete (here, autoComplete="on").
+• The name="tel" (or autocomplete="tel") tells Safari “this is a phone‐number field, please pull from Contacts.” 
+Stack Overflow
+
+2. Pass the attributes through to the underlying <input>
+If for some reason you can’t add them directly, react-phone-number-input will forward unknown props onto its <input>:
+
+tsx
+Copy
+Edit
+<PhoneInput
+  inputProps={{
+    name: "tel",
+    autoComplete: "tel"
+  }}
+  placeholder="(555) 555-5555"
+  value={phone}
+  onChange={(value) => setPhone(value || "")}
+  country="US"
+/>
+All other props you pass (like name or autoComplete) will be handed off to the <input> element itself. 
+npm
+
+3. Double‑check your user settings
+Finally, on your iOS device:
+
+Go to Settings → Siri & Search → My Information and make sure your own contact is selected.
+
+If you’ve recently received an SMS 2FA code, iOS may prioritise that suggestion for a while; deleting the code or restarting Safari will restore the contact’s phone number suggestion. 
+Stack Overflow
+
+Once you’ve done that, focus on the phone field and you should see your number appear above the keyboard as an autofill suggestion.

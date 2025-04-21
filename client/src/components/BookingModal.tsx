@@ -208,7 +208,16 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{formatDate(date)}</DialogTitle>
+        </DialogHeader>
+        <DialogHeader>
+          <DialogTitle>{formatDate(date)}</DialogTitle>
+        </DialogHeader>
+        <DialogHeader>
+          <DialogTitle>{formatDate(date)}</DialogTitle>
+        </DialogHeader>
         <DialogHeader>
           <DialogTitle>{formatDate(date)}</DialogTitle>
         </DialogHeader>
